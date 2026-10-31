@@ -11,3 +11,9 @@ playwright-report/
 .env*
 !.env.example
 !**/.env.example
+
+.claude/
+.agents/
+.codegraph/
+
+skills-lock.json

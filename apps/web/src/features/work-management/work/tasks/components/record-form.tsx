@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   validatedCreateSchema as createSchema,
   type RecordDto,
@@ -17,6 +17,7 @@ import {
   Select,
   Textarea,
 } from "@/features/work-management/work/tasks/components/primitives/forms";
+
 export function RecordForm({
   record,
   onClose,
@@ -25,14 +26,56 @@ export function RecordForm({
   onClose: () => void;
 }) {
   const { notify } = useWorkspace();
-  const [pending, setPending] = useState(false),
-    [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [assignee, setAssignee] = useState(record?.assignee ?? "");
+  const [reviewer, setReviewer] = useState(record?.reviewer ?? "");
+  const [taskName, setTaskName] = useState(record?.name ?? "");
+  const [similarTasks, setSimilarTasks] = useState<RecordDto[]>([]);
+  const [checkingSimilar, setCheckingSimilar] = useState(false);
+  const [attachmentLinks, setAttachmentLinks] = useState<string[]>(
+    record?.attachmentLinks ?? [],
+  );
+  const [newLink, setNewLink] = useState("");
+
+  // ROUND1-2: Kiểm tra task trùng khi nhập tên + assignee (BR-TSK-03)
+  useEffect(() => {
+    if (record) return; // Chỉ check khi tạo mới
+    const timer = setTimeout(async () => {
+      if (assignee.length >= 2 && taskName.length >= 3) {
+        setCheckingSimilar(true);
+        try {
+          const similar = await client.checkSimilarTasks(assignee, taskName);
+          setSimilarTasks(similar);
+        } catch {
+          setSimilarTasks([]);
+        } finally {
+          setCheckingSimilar(false);
+        }
+      } else {
+        setSimilarTasks([]);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [assignee, taskName, record]);
+
+  const reviewerError =
+    reviewer && assignee && reviewer === assignee
+      ? "Người kiểm tra phải khác người phụ trách"
+      : "";
+
   return (
     <form
       onSubmit={async (event) => {
         event.preventDefault();
         if (pending) return;
+        if (reviewerError) {
+          setError(reviewerError);
+          return;
+        }
         const data = new FormData(event.currentTarget);
+
+        // Xây dựng extra fields
         const extra: Record<string, unknown> = { ...record?.fields };
         for (const field of fields) {
           const raw = String(data.get("field:" + field.key) || "").trim();
@@ -40,22 +83,36 @@ export function RecordForm({
             extra[field.key] = field.type === "number" ? Number(raw) : raw;
           else delete extra[field.key];
         }
+
+        // Deadline datetime
+        const deadlineDate = String(data.get("deadline-date") || "").trim();
+        const deadlineTime = String(data.get("deadline-time") || "17:00").trim();
+        let deadline: string | undefined;
+        if (deadlineDate) {
+          const dt = new Date(`${deadlineDate}T${deadlineTime}:00+07:00`);
+          if (!isNaN(dt.getTime())) deadline = dt.toISOString();
+        }
+
         const parsed = createSchema.safeParse({
           code: String(data.get("code") || "").trim(),
           name: String(data.get("name") || "").trim(),
           date: String(data.get("date")),
-          status: String(data.get("status")),
-          assignee: String(data.get("assignee") || "").trim(),
+          status: record ? record.status : "Cần làm",
+          assignee: assignee.trim(),
+          reviewer: reviewer.trim(),
+          deadline,
+          attachmentLinks,
           note: String(data.get("note") || "").trim(),
           scope: record?.scope || "",
           fields: extra,
         });
+
         if (!parsed.success) {
-          setError(
-            parsed.error.issues[0]?.message || "Kiểm tra thông tin nhập",
-          );
+          const firstIssue = parsed.error.issues[0];
+          setError(firstIssue?.message || "Kiểm tra thông tin nhập");
           return;
         }
+
         setPending(true);
         setError("");
         try {
@@ -72,9 +129,10 @@ export function RecordForm({
       }}
     >
       <div className="form-body">
+        {/* Mã + Ngày */}
         <div className="form-grid">
           <label>
-            Mã{" "}
+            Mã <span aria-hidden="true" className="text-destructive">*</span>
             <Input
               name="code"
               required
@@ -84,7 +142,8 @@ export function RecordForm({
             />
           </label>
           <label>
-            {definition.dateLabel}
+            {definition.dateLabel}{" "}
+            <span aria-hidden="true" className="text-destructive">*</span>
             <Input
               name="date"
               type="date"
@@ -101,80 +160,197 @@ export function RecordForm({
             />
           </label>
         </div>
+
+        {/* Tên task */}
         <label>
-          Tiêu đề
+          Tiêu đề <span aria-hidden="true" className="text-destructive">*</span>
           <Input
             name="name"
             required
-            maxLength={500}
+            maxLength={150}
             defaultValue={record?.name}
             placeholder={"Nhập tên " + definition.singular}
+            onChange={(e) => setTaskName(e.target.value)}
           />
+          <span className="text-xs text-muted-foreground">Tối đa 150 ký tự</span>
         </label>
+
+        {/* Người phụ trách + Người kiểm tra (BR-TSK-01) */}
         <div className="form-grid">
           <label>
-            Trạng thái
-            <Select
-              name="status"
-              defaultValue={record?.status || definition.statuses[0]}
-            >
-              {definition.statuses.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </Select>
-          </label>
-          <label>
-            {definition.personLabel}
+            {definition.personLabel}{" "}
+            <span aria-hidden="true" className="text-destructive">*</span>
             <Input
               name="assignee"
+              required
               maxLength={150}
-              defaultValue={record?.assignee}
+              value={assignee}
+              onChange={(e) => setAssignee(e.target.value)}
+              placeholder="Người phụ trách"
             />
           </label>
-        </div>
-        <div className="form-grid">
-          {fields.map((field) => (
-            <label key={field.key}>
-              {field.label}
-              {field.type === "select" ? (
-                <Select
-                  name={"field:" + field.key}
-                  defaultValue={String(
-                    record?.fields[field.key as keyof RecordDto["fields"]] ??
-                      field.options?.[0] ??
-                      "",
-                  )}
-                >
-                  {field.options?.map((option) => (
-                    <option key={option}>{option}</option>
-                  ))}
-                </Select>
-              ) : field.type === "textarea" ? (
-                <Textarea
-                  name={"field:" + field.key}
-                  maxLength={20000}
-                  rows={4}
-                  defaultValue={String(
-                    record?.fields[field.key as keyof RecordDto["fields"]] ??
-                      "",
-                  )}
-                />
-              ) : (
-                <Input
-                  name={"field:" + field.key}
-                  type={field.type}
-                  min={field.type === "number" ? 0 : undefined}
-                  max={field.key === "progress" ? 100 : undefined}
-                  maxLength={1000}
-                  defaultValue={String(
-                    record?.fields[field.key as keyof RecordDto["fields"]] ??
-                      "",
-                  )}
-                />
-              )}
+          <div>
+            <label>
+              {definition.reviewerLabel}
+              <Input
+                name="reviewer"
+                maxLength={150}
+                value={reviewer}
+                onChange={(e) => setReviewer(e.target.value)}
+                placeholder="Người kiểm tra (mặc định là người tạo)"
+                aria-describedby={reviewerError ? "reviewer-error" : undefined}
+                aria-invalid={!!reviewerError}
+              />
             </label>
-          ))}
+            {reviewerError && (
+              <p id="reviewer-error" className="mt-1 text-sm text-destructive" role="alert">
+                {reviewerError}
+              </p>
+            )}
+          </div>
         </div>
+
+        {/* Deadline (ngày + giờ) — spec 8.2 */}
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium">
+            Deadline{" "}
+            <span aria-hidden="true" className="text-destructive">*</span>
+          </legend>
+          <div className="flex gap-2">
+            <label className="flex-1">
+              <span className="sr-only">Ngày deadline</span>
+              <Input
+                name="deadline-date"
+                type="date"
+                required
+                defaultValue={
+                  record?.deadline
+                    ? new Date(record.deadline)
+                        .toISOString()
+                        .slice(0, 10)
+                    : new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Asia/Ho_Chi_Minh",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      }).format(new Date())
+                }
+              />
+            </label>
+            <label className="flex-1">
+              <span className="sr-only">Giờ deadline</span>
+              <Input
+                name="deadline-time"
+                type="time"
+                required
+                defaultValue={
+                  record?.deadline
+                    ? new Date(record.deadline)
+                        .toLocaleTimeString("en-GB", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: "Asia/Ho_Chi_Minh",
+                        })
+                    : "17:00"
+                }
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        {/* Cảnh báo task trùng — BR-TSK-03 (không chặn) */}
+        {checkingSimilar && (
+          <p className="text-sm text-muted-foreground" role="status">
+            Đang kiểm tra task trùng…
+          </p>
+        )}
+        {!record && similarTasks.length > 0 && (
+          <div
+            className="rounded-control border border-yellow-400 bg-yellow-50 p-3 dark:border-yellow-600 dark:bg-yellow-950/30"
+            role="alert"
+            aria-label="Cảnh báo task tương tự"
+          >
+            <p className="mb-2 text-sm font-semibold text-yellow-800 dark:text-yellow-300">
+              ⚠️ Nhân viên này đã có {similarTasks.length} task chưa xong tên tương tự:
+            </p>
+            <ul className="space-y-1">
+              {similarTasks.map((task) => (
+                <li key={task.id} className="text-sm text-yellow-700 dark:text-yellow-400">
+                  <span className="font-mono font-medium">{task.code}</span>: {task.name}{" "}
+                  <span className="text-muted-foreground">({task.status})</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-yellow-700 dark:text-yellow-500">
+              Bạn vẫn có thể tiếp tục tạo task mới.
+            </p>
+          </div>
+        )}
+
+        {/* Độ ưu tiên */}
+        <label>
+          Độ ưu tiên
+          <Select
+            name="field:priority"
+            defaultValue={
+              (record?.fields?.priority as string | undefined) ?? "Trung bình"
+            }
+          >
+            <option value="Thấp">Thấp</option>
+            <option value="Trung bình">Trung bình</option>
+            <option value="Cao">Cao</option>
+            <option value="Khẩn cấp">Khẩn cấp</option>
+          </Select>
+        </label>
+
+        {/* Các trường dynamic còn lại (bỏ priority vì đã render riêng) */}
+        <div className="form-grid">
+          {fields
+            .filter((f) => f.key !== "priority")
+            .map((field) => (
+              <label key={field.key}>
+                {field.label}
+                {field.type === "select" ? (
+                  <Select
+                    name={"field:" + field.key}
+                    defaultValue={String(
+                      record?.fields[field.key as keyof RecordDto["fields"]] ??
+                        field.options?.[0] ??
+                        "",
+                    )}
+                  >
+                    {field.options?.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </Select>
+                ) : field.type === "textarea" ? (
+                  <Textarea
+                    name={"field:" + field.key}
+                    maxLength={20000}
+                    rows={4}
+                    defaultValue={String(
+                      record?.fields[field.key as keyof RecordDto["fields"]] ??
+                        "",
+                    )}
+                  />
+                ) : (
+                  <Input
+                    name={"field:" + field.key}
+                    type={field.type}
+                    min={field.type === "number" ? 0 : undefined}
+                    max={field.key === "progress" ? 100 : undefined}
+                    maxLength={1000}
+                    defaultValue={String(
+                      record?.fields[field.key as keyof RecordDto["fields"]] ??
+                        "",
+                    )}
+                  />
+                )}
+              </label>
+            ))}
+        </div>
+
+        {/* Mô tả */}
         <label>
           Mô tả
           <Textarea
@@ -182,19 +358,83 @@ export function RecordForm({
             maxLength={2000}
             rows={3}
             defaultValue={record?.note}
+            placeholder="Nhập mô tả chi tiết…"
           />
         </label>
+
+        {/* Link đính kèm — spec 8.2 */}
+        <div>
+          <p className="mb-2 text-sm font-medium">Link đính kèm</p>
+          <div className="space-y-2">
+            {attachmentLinks.map((link, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 truncate text-sm text-primary underline"
+                >
+                  {link}
+                </a>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setAttachmentLinks(attachmentLinks.filter((_, i) => i !== idx))
+                  }
+                  aria-label={`Xóa link ${link}`}
+                >
+                  Xóa
+                </Button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Input
+                value={newLink}
+                onChange={(e) => setNewLink(e.target.value)}
+                placeholder="https://…"
+                type="url"
+                className="flex-1"
+                aria-label="URL link đính kèm"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!newLink || attachmentLinks.length >= 50}
+                onClick={() => {
+                  try {
+                    new URL(newLink);
+                    setAttachmentLinks([...attachmentLinks, newLink]);
+                    setNewLink("");
+                  } catch {
+                    /* URL không hợp lệ, không thêm */
+                  }
+                }}
+              >
+                Thêm link
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Lỗi form */}
         {error && (
           <p className="error" role="alert">
             {error}
           </p>
         )}
       </div>
+
       <footer>
         <Button type="button" variant="secondary" onClick={onClose}>
           Hủy
         </Button>
-        <Button type="submit" disabled={pending}>
+        <Button
+          type="submit"
+          disabled={pending || !!reviewerError}
+          aria-busy={pending}
+        >
           {pending ? "Đang lưu…" : record ? "Lưu thay đổi" : "Tạo mới"}
         </Button>
       </footer>

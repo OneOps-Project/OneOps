@@ -1,22 +1,48 @@
 import { z } from "zod";
+
+// 7 trạng thái theo spec mục 9
+const statusEnum = z.enum([
+  "Cần làm",
+  "Đang làm",
+  "Làm lại",
+  "Chờ kiểm tra",
+  "Hoãn lại",
+  "Hoàn thành",
+  "Đã hủy",
+]);
+
+// Priority theo spec 8.2
+const priorityEnum = z.enum(["Thấp", "Trung bình", "Cao", "Khẩn cấp"]);
+
 const recordInput = z
   .object({
     code: z.string().trim().min(1).max(100),
-    name: z.string().trim().min(1).max(500),
+    name: z.string().trim().min(1).max(150), // spec 8.2: ≤150 ký tự
     scope: z.string().trim().max(250).default(""),
-    status: z.enum(["Cần làm", "Đang thực hiện", "Chờ phản hồi", "Hoàn thành"]),
-    date: z.iso.date(),
+    status: statusEnum,
+    date: z.iso.date(), // giữ date cũ để backward compatible
     assignee: z.string().trim().max(150).default(""),
+    reviewer: z.string().trim().max(150).default(""), // Người kiểm tra
+    deadline: z.iso.datetime().optional(), // Deadline ngày+giờ
     note: z.string().trim().max(2000).default(""),
+    attachmentLinks: z.array(z.string().url().max(2000)).max(50).default([]),
   })
   .strict();
 const recordPatch = recordInput
-  .omit({ scope: true, assignee: true, note: true })
+  .omit({
+    scope: true,
+    assignee: true,
+    reviewer: true,
+    note: true,
+    attachmentLinks: true,
+  })
   .partial()
   .extend({
     scope: z.string().trim().max(250).optional(),
     assignee: z.string().trim().max(150).optional(),
+    reviewer: z.string().trim().max(150).optional(),
     note: z.string().trim().max(2000).optional(),
+    attachmentLinks: z.array(z.string().url().max(2000)).max(50).optional(),
   });
 export const listQuery = z
   .object({
@@ -26,6 +52,7 @@ export const listQuery = z
     scope: z.string().max(250).optional(),
     status: z.string().max(150).optional(),
     assignee: z.string().trim().max(150).optional(),
+    reviewer: z.string().trim().max(150).optional(),
   })
   .strict();
 export const versionSchema = z
@@ -35,7 +62,7 @@ export const versionSchema = z
 export const fieldsSchema = z
   .object({
     project: z.string().trim().max(1000).optional(),
-    priority: z.enum(["Thấp", "Trung bình", "Cao", "Khẩn cấp"]).optional(),
+    priority: priorityEnum.optional(),
     progress: z.number().int().min(0).max(100).optional(),
     startDate: z.union([z.iso.date(), z.literal("")]).optional(),
     tags: z.string().trim().max(1000).optional(),
@@ -66,6 +93,40 @@ export const fieldsSchema = z
       .optional(),
   })
   .strict();
+
+// Lịch sử trạng thái bất biến
+export const statusHistoryItemSchema = z
+  .object({
+    status: statusEnum,
+    actor: z.string().trim().max(150),
+    actorRole: z.enum(["manager", "assignee", "reviewer"]),
+    timestamp: z.iso.datetime(),
+    reason: z.string().trim().max(500).default(""),
+  })
+  .strict();
+
+// Cờ cần giao lại
+export const reassignmentFlagSchema = z
+  .object({
+    needed: z.boolean(),
+    reason: z.string().trim().max(500).default(""),
+    source: z
+      .enum(["leave_approved", "account_locked", "left_team"])
+      .optional(),
+    timestamp: z.iso.datetime().optional(),
+  })
+  .strict();
+
+// Lịch sử giao lại
+export const reassignmentHistoryItemSchema = z
+  .object({
+    fromAssignee: z.string().trim().max(150),
+    toAssignee: z.string().trim().max(150),
+    managerId: z.string().trim().max(150),
+    reason: z.string().trim().max(500),
+    timestamp: z.iso.datetime(),
+  })
+  .strict();
 export const createSchema = recordInput.extend({
   fields: fieldsSchema.default({}),
 });
@@ -78,15 +139,62 @@ export const updateSchema = recordPatch
 export const recordSchema = createSchema.extend({
   id: z.uuid(),
   module: z.literal("tasks"),
+  statusHistory: z.array(statusHistoryItemSchema).default([]),
+  reassignmentFlag: reassignmentFlagSchema.default({
+    needed: false,
+    reason: "",
+  }),
+  reassignmentHistory: z.array(reassignmentHistoryItemSchema).default([]),
   version: z.number().int().positive(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
-export const validatedCreateSchema = createSchema.refine(
-  (value) => !value.fields.startDate || value.fields.startDate <= value.date,
-  { message: "Hạn hoàn thành phải từ ngày bắt đầu trở đi", path: ["date"] },
-);
+
+// Schema cho thay đổi trạng thái
+export const changeStatusSchema = z
+  .object({
+    status: statusEnum,
+    actorId: z.string().trim().min(1).max(150),
+    actorRole: z.enum(["manager", "assignee", "reviewer"]),
+    reason: z.string().trim().max(500).default(""),
+    newDeadline: z.iso.datetime().optional(), // Khi làm lại cần deadline mới nếu quá hạn
+  })
+  .strict();
+
+// Schema cho giao lại
+export const reassignSchema = z
+  .object({
+    newAssignee: z.string().trim().min(1).max(150),
+    managerId: z.string().trim().min(1).max(150),
+    reason: z.string().trim().min(1).max(500),
+  })
+  .strict();
+export const validatedCreateSchema = createSchema
+  .refine(
+    (value) => !value.fields.startDate || value.fields.startDate <= value.date,
+    { message: "Hạn hoàn thành phải từ ngày bắt đầu trở đi", path: ["date"] },
+  )
+  .refine((value) => !value.reviewer || value.reviewer !== value.assignee, {
+    message: "Người kiểm tra phải khác người phụ trách",
+    path: ["reviewer"],
+  })
+  .refine(
+    (value) => {
+      if (!value.deadline) return true;
+      const deadlineDate = new Date(value.deadline);
+      const now = new Date();
+      return deadlineDate > now;
+    },
+    { message: "Deadline không được ở quá khứ", path: ["deadline"] },
+  );
 export type RecordInput = z.input<typeof createSchema>;
 export type RecordOutput = z.infer<typeof recordSchema>;
 export type RecordDto = RecordOutput;
 export type ListQuery = z.infer<typeof listQuery>;
+export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
+export type ReassignInput = z.infer<typeof reassignSchema>;
+export type StatusHistoryItem = z.infer<typeof statusHistoryItemSchema>;
+export type ReassignmentFlag = z.infer<typeof reassignmentFlagSchema>;
+export type ReassignmentHistoryItem = z.infer<
+  typeof reassignmentHistoryItemSchema
+>;

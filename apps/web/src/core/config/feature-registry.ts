@@ -18,6 +18,8 @@ export const modules = [
 ];
 const pageAliases: Record<string, string> = {
   "work-management/kanban": "work-management/tasks",
+  "work-management/tasks/my-tasks": "work-management/tasks",
+  "work-management/tasks/flagged": "work-management/tasks",
 };
 export const getModule = (id: string) =>
   modules.find((module) => module.id === (pageAliases[id] || id));
