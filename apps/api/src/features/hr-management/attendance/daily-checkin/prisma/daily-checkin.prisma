@@ -1,0 +1,19 @@
+model AttendanceRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  employeeId   String   @db.VarChar(64)
+  employeeName String   @db.VarChar(200)
+  workDate     String   @db.VarChar(10)
+  checkIn      String   @db.VarChar(5)
+  checkOut     String?  @db.VarChar(5)
+  source       String   @default("WEB") @db.VarChar(20)
+  note         String   @default("") @db.VarChar(500)
+  status       String   @default("OPEN") @db.VarChar(20)
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([employeeId, workDate])
+  @@index([workDate, status])
+  @@map("attendance_records")
+  @@schema("hr_attendance")
+}

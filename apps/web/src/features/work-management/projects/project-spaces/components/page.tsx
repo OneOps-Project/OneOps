@@ -19,7 +19,10 @@ import {
 } from "@/features/work-management/projects/project-spaces/components/primitives/forms";
 import { Badge } from "@/features/work-management/projects/project-spaces/components/primitives/foundations";
 import { RecordForm } from "@/features/work-management/projects/project-spaces/components/record-form";
+import { SprintBoard } from "@/features/work-management/projects/project-spaces/components/sprint-board";
 import styles from "@/features/work-management/projects/project-spaces/components/styles.module.css";
+
+type View = "cards" | "list" | "sprint";
 
 export function ModulePage() {
   const params = useSearchParams();
@@ -32,7 +35,7 @@ export function ModulePage() {
     [deleting, setDeleting] = useState<RecordDto | null>(null),
     [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [view, setView] = useState("cards");
+  const [view, setView] = useState<View>("cards");
   const effectiveStatus =
     status === "all" ? "" : status || params.get("status") || "";
   const filtered = records.filter(
@@ -108,22 +111,26 @@ export function ModulePage() {
           </div>
 
           <div className={styles.toolbar}>
-            <Input
-              aria-label="Tìm kiếm"
-              placeholder={"Tìm " + definition.singular + "…"}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <Select
-              aria-label="Lọc trạng thái"
-              value={effectiveStatus}
-              onChange={(e) => setStatus(e.target.value || "all")}
-            >
-              <option value="">Tất cả trạng thái</option>
-              {definition.statuses.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </Select>
+            {view !== "sprint" && (
+              <>
+                <Input
+                  aria-label="Tìm kiếm"
+                  placeholder={"Tìm " + definition.singular + "…"}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                <Select
+                  aria-label="Lọc trạng thái"
+                  value={effectiveStatus}
+                  onChange={(e) => setStatus(e.target.value || "all")}
+                >
+                  <option value="">Tất cả trạng thái</option>
+                  {definition.statuses.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </Select>
+              </>
+            )}
             <Button
               variant={view === "list" ? "primary" : "secondary"}
               onClick={() => setView("list")}
@@ -136,9 +143,17 @@ export function ModulePage() {
             >
               Thẻ
             </Button>
-            <span className="text-sm text-muted-foreground">
-              {filtered.length} mục
-            </span>
+            <Button
+              variant={view === "sprint" ? "primary" : "secondary"}
+              onClick={() => setView("sprint")}
+            >
+              Sprint
+            </Button>
+            {view !== "sprint" && (
+              <span className="text-sm text-muted-foreground">
+                {filtered.length} mục
+              </span>
+            )}
           </div>
           {(error || actionError) && (
             <div role="alert" className="error">
@@ -150,6 +165,8 @@ export function ModulePage() {
           )}
           {loading ? (
             <p role="status">Đang tải dữ liệu…</p>
+          ) : view === "sprint" ? (
+            <SprintBoard projects={records} />
           ) : !filtered.length ? (
             <div className={styles.empty}>
               <h2>Chưa có {definition.singular} phù hợp</h2>

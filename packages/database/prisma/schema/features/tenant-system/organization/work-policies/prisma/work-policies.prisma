@@ -1,0 +1,63 @@
+model WorkPolicy {
+  id               String   @id @default(uuid()) @db.Uuid
+  key              String   @unique @default("default") @db.VarChar(20)
+  timezone         String   @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  workStart        String   @default("08:30") @db.VarChar(5)
+  workEnd          String   @default("17:30") @db.VarChar(5)
+  breakMinutes     Int      @default(60)
+  lateGraceMinutes Int      @default(5)
+  workDays         Int[]    @default([1, 2, 3, 4, 5])
+  version          Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("policies")
+  @@schema("tenant_policies")
+}
+
+model WorkHoliday {
+  id        String   @id @default(uuid()) @db.Uuid
+  dateKey   String   @unique @db.VarChar(10)
+  date      DateTime @db.Date
+  name      String   @db.VarChar(200)
+  paid      Boolean  @default(true)
+  note      String   @default("") @db.VarChar(500)
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, date])
+  @@map("holidays")
+  @@schema("tenant_policies")
+}
+
+model OfficeNetwork {
+  id        String   @id @default(uuid()) @db.Uuid
+  label     String   @db.VarChar(150)
+  cidr      String   @db.VarChar(64)
+  cidrKey   String   @unique @db.VarChar(64)
+  note      String   @default("") @db.VarChar(500)
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, label])
+  @@map("office_networks")
+  @@schema("tenant_policies")
+}
+
+model LeaveQuota {
+  id               String   @id @default(uuid()) @db.Uuid
+  year             Int      @unique
+  daysPerYear      Int      @default(12)
+  maxCarryOverDays Int      @default(0)
+  note             String   @default("") @db.VarChar(500)
+  version          Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("leave_quotas")
+  @@schema("tenant_policies")
+}

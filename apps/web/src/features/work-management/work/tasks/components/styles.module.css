@@ -4,9 +4,8 @@
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-2);
   align-items: center;
-  margin-bottom: 20px;
 }
 .toolbar input {
   max-width: 340px;
@@ -15,50 +14,33 @@
   width: auto;
   min-width: 170px;
 }
+.toolbarRight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--space-2);
 }
 .table {
   width: 100%;
-  border-collapse: collapse;
 }
 .table th,
 .table td {
   text-align: left;
-  padding: 14px 12px;
-  border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
 .table th {
-  color: var(--foreground-muted);
-  font-size: 12px;
-  font-weight: 500;
   white-space: nowrap;
-}
-.table td {
-  font-size: 14px;
-}
-.table tbody tr:hover {
-  background: color-mix(in srgb, var(--action) 6%, transparent);
 }
 .table button {
   text-align: left;
   color: var(--action);
   overflow-wrap: anywhere;
-}
-.empty {
-  text-align: center;
-  border: 1px dashed var(--line);
-  border-radius: 12px;
-  padding: 48px 24px;
-  color: var(--foreground-muted);
-}
-.empty h2 {
-  color: var(--text);
-  font-size: 18px;
 }
 .scroll {
   overflow: auto;
@@ -115,26 +97,70 @@
   align-items: center;
   padding: 8px 0;
 }
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+.linkGroups {
+  display: grid;
+  gap: 12px;
 }
-.header h1 {
+.linkGroup {
+  display: grid;
+  gap: 4px;
+}
+.linkGroupTitle {
   margin: 0;
-  font-size: 24px;
-}
-.header p {
+  font-size: 12px;
+  font-weight: 600;
   color: var(--foreground-muted);
-  margin: 8px 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.linkList {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.linkList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: 13px;
+}
+.linkCode {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--foreground-muted);
+}
+.linkName {
+  flex: 1 1 160px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.linkForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.linkForm > p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.linkForm input,
+.linkForm select {
+  width: auto;
+  min-width: 160px;
+  flex: 1 1 180px;
 }
 @media (max-width: 800px) {
-  .header h1 {
-    font-size: 20px;
-  }
   .details {
     padding: 16px;
   }

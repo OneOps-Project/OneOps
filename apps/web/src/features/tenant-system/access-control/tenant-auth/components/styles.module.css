@@ -1,0 +1,228 @@
+.screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--space-5);
+  min-height: 100dvh;
+  padding: var(--space-4);
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  padding-block: var(--space-4);
+}
+.card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-6);
+  border: 1px solid var(--card-glass-border);
+  border-radius: var(--bento-radius);
+  background: var(--card-glass-bg);
+  box-shadow: var(--elevation-glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+.cardMark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--space-5);
+}
+.markIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-control);
+  background-image: linear-gradient(
+    140deg,
+    var(--action-gradient-from) 0%,
+    var(--action-gradient-to) 100%
+  );
+  color: var(--action-foreground);
+  box-shadow: 0 6px 18px var(--glow-soft);
+}
+.markName {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+.markTag {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--foreground-muted);
+}
+.title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+.lede {
+  margin: var(--space-1) 0 var(--space-5);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--foreground-muted);
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.note {
+  max-width: 44ch;
+  margin-top: var(--space-4);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--foreground-subtle);
+}
+.brand {
+  position: relative;
+  isolation: isolate;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-6);
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--bento-radius);
+  background-image:
+    radial-gradient(90% 70% at 0% 0%, var(--mist-warm) 0%, transparent 62%),
+    radial-gradient(80% 76% at 100% 6%, var(--mist-violet) 0%, transparent 64%),
+    radial-gradient(90% 80% at 60% 108%, var(--mist-cyan) 0%, transparent 66%),
+    linear-gradient(
+      150deg,
+      var(--aurora-from) 0%,
+      var(--aurora-via) 54%,
+      var(--aurora-to) 100%
+    );
+  box-shadow: var(--elevation-glass);
+}
+.brand::before {
+  content: "";
+  position: absolute;
+  top: -18%;
+  right: -14%;
+  z-index: -1;
+  width: min(520px, 72%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    var(--glow-soft) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+/* Khối nội dung tự cân giữa panel để không dồn hết lên đầu khi màn cao. */
+.brand > div {
+  margin-block: auto;
+}
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+.brandBadge {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-control);
+  background: var(--glass-strong);
+  color: var(--action);
+}
+.brandHeadline {
+  max-width: 22ch;
+  font-size: clamp(26px, 2.4vw, 34px);
+  line-height: 1.22;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+  text-wrap: balance;
+}
+.brandLede {
+  max-width: 46ch;
+  margin-top: var(--space-3);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--foreground-muted);
+}
+.brandList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.brandList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--foreground-muted);
+}
+.brandList li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--action);
+}
+.brandFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--foreground-subtle);
+}
+@media (min-width: 1000px) {
+  .screen {
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+    gap: var(--space-6);
+    padding: var(--space-6);
+  }
+  .brand {
+    display: flex;
+  }
+}
+@media (max-width: 999px) {
+  .screen {
+    align-items: center;
+  }
+  .panel {
+    padding-block: var(--space-6);
+  }
+}
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-4);
+  }
+  .title {
+    font-size: 20px;
+    line-height: 26px;
+  }
+}

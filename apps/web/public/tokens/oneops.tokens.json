@@ -1,7 +1,7 @@
 {
   "name": "OneOps Design Tokens",
-  "version": "1.1.0",
-  "description": "Bộ token ba lớp cho hệ thống OneOps, giữ nhận diện cam và xanh đậm.",
+  "version": "2.0.0",
+  "description": "Bộ token ba lớp cho OneOps Aurora: console vận hành mật độ cao đặt trên nền sương màu, khối kính mờ và lưới bento; cam thương hiệu dành cho hành động, xanh đậm cho nội dung.",
   "primitive": {
     "brand-50": {
       "value": "#fff8f1",
@@ -159,6 +159,60 @@
       "description": "Thang trung tính muted-dark",
       "type": "color"
     },
+    "prism-violet-100": {
+      "value": "#efe9ff",
+      "category": "color",
+      "description": "Sương tím cấp 100",
+      "type": "color"
+    },
+    "prism-violet-300": {
+      "value": "#c4b5ff",
+      "category": "color",
+      "description": "Sương tím cấp 300",
+      "type": "color"
+    },
+    "prism-violet-500": {
+      "value": "#7c5cff",
+      "category": "color",
+      "description": "Sương tím cấp 500",
+      "type": "color"
+    },
+    "prism-violet-700": {
+      "value": "#5b3ad6",
+      "category": "color",
+      "description": "Sương tím cấp 700",
+      "type": "color"
+    },
+    "prism-cyan-100": {
+      "value": "#ddf8ff",
+      "category": "color",
+      "description": "Sương lam cấp 100",
+      "type": "color"
+    },
+    "prism-cyan-300": {
+      "value": "#93e7ff",
+      "category": "color",
+      "description": "Sương lam cấp 300",
+      "type": "color"
+    },
+    "prism-cyan-500": {
+      "value": "#1fc8ee",
+      "category": "color",
+      "description": "Sương lam cấp 500",
+      "type": "color"
+    },
+    "prism-rose-100": {
+      "value": "#ffe4ef",
+      "category": "color",
+      "description": "Sương hồng cấp 100",
+      "type": "color"
+    },
+    "prism-rose-500": {
+      "value": "#ff5d9e",
+      "category": "color",
+      "description": "Sương hồng cấp 500",
+      "type": "color"
+    },
     "space-0": {
       "value": "0px",
       "category": "spacing",
@@ -243,6 +297,18 @@
       "description": "Bước khoảng cách nhỏ 2px",
       "type": "dimension"
     },
+    "tracking-tight": {
+      "value": "-0.02em",
+      "category": "typography",
+      "description": "Giãn chữ tiêu đề lớn",
+      "type": "dimension"
+    },
+    "tracking-eyebrow": {
+      "value": "0.08em",
+      "category": "typography",
+      "description": "Giãn chữ nhãn nhóm chữ hoa",
+      "type": "dimension"
+    },
     "radius-none": {
       "value": "0px",
       "category": "radius",
@@ -274,7 +340,7 @@
       "type": "dimension"
     },
     "radius-xl": {
-      "value": "14px",
+      "value": "12px",
       "category": "radius",
       "description": "Bo góc xl",
       "type": "dimension"
@@ -519,6 +585,24 @@
       "description": "Độ đậm vai trò micro",
       "type": "number"
     },
+    "type-eyebrow-size": {
+      "value": "11px",
+      "category": "typography",
+      "description": "Cỡ chữ nhãn nhóm",
+      "type": "dimension"
+    },
+    "type-eyebrow-line": {
+      "value": "16px",
+      "category": "typography",
+      "description": "Chiều cao dòng nhãn nhóm",
+      "type": "dimension"
+    },
+    "type-eyebrow-weight": {
+      "value": "{weight-semibold}",
+      "category": "typography",
+      "description": "Độ đậm nhãn nhóm",
+      "type": "number"
+    },
     "type-family-sans": {
       "value": "Inter, Arial, sans-serif",
       "category": "typography",
@@ -559,6 +643,12 @@
       "value": "0 24px 80px #00204d30",
       "category": "elevation",
       "description": "Bóng đổ modal",
+      "type": "shadow"
+    },
+    "elevation-glass": {
+      "value": "0 18px 48px #00204d1a, inset 0 1px 0 #ffffffa6",
+      "category": "elevation",
+      "description": "Bóng mềm cho khối kính, kèm vệt sáng viền trên",
       "type": "shadow"
     },
     "duration-instant": {
@@ -703,9 +793,9 @@
         "type": "color"
       },
       "foreground-subtle": {
-        "value": "{neutral-500}",
+        "value": "#5f7183",
         "category": "color",
-        "description": "Vai trò foreground-subtle",
+        "description": "Nhãn phụ và chú thích; giữ tương phản ≥4,5:1 trên surface và canvas",
         "type": "color"
       },
       "action": {
@@ -748,6 +838,18 @@
         "value": "{neutral-300}",
         "category": "color",
         "description": "Vai trò line-strong",
+        "type": "color"
+      },
+      "line-soft": {
+        "value": "#eef2f8",
+        "category": "color",
+        "description": "Đường phân cách mảnh trong khối dữ liệu",
+        "type": "color"
+      },
+      "surface-inset": {
+        "value": "#f7f9fc",
+        "category": "color",
+        "description": "Nền vùng phụ bên trong khối dữ liệu",
         "type": "color"
       },
       "ring": {
@@ -863,6 +965,90 @@
         "category": "color",
         "description": "Trạng thái focus-offset",
         "type": "color"
+      },
+      "glass": {
+        "value": "#ffffffb3",
+        "category": "color",
+        "description": "Nền kính cho thanh trên, panel điều hướng và widget",
+        "type": "color"
+      },
+      "glass-strong": {
+        "value": "#ffffffd9",
+        "category": "color",
+        "description": "Kính đậm hơn cho lớp nổi như hộp thoại",
+        "type": "color"
+      },
+      "glass-border": {
+        "value": "#ffffffcc",
+        "category": "color",
+        "description": "Viền sáng của khối kính",
+        "type": "color"
+      },
+      "glass-highlight": {
+        "value": "#ffffff",
+        "category": "color",
+        "description": "Vệt sáng 1px ở mép trên khối kính",
+        "type": "color"
+      },
+      "mist-warm": {
+        "value": "#ff9b471f",
+        "category": "color",
+        "description": "Vệt sương cam phía trên trái",
+        "type": "color"
+      },
+      "mist-violet": {
+        "value": "#7c5cff1f",
+        "category": "color",
+        "description": "Vệt sương tím phía trên phải",
+        "type": "color"
+      },
+      "mist-cyan": {
+        "value": "#1fc8ee17",
+        "category": "color",
+        "description": "Vệt sương lam phía dưới",
+        "type": "color"
+      },
+      "aurora-from": {
+        "value": "#fff4e8",
+        "category": "color",
+        "description": "Điểm đầu dải cực quang",
+        "type": "color"
+      },
+      "aurora-via": {
+        "value": "#f1ecff",
+        "category": "color",
+        "description": "Điểm giữa dải cực quang",
+        "type": "color"
+      },
+      "aurora-to": {
+        "value": "#e6f7ff",
+        "category": "color",
+        "description": "Điểm cuối dải cực quang",
+        "type": "color"
+      },
+      "glow-soft": {
+        "value": "#f0600029",
+        "category": "color",
+        "description": "Quầng sáng quanh hành động chính và focus",
+        "type": "color"
+      },
+      "sheen": {
+        "value": "#ffffff66",
+        "category": "color",
+        "description": "Vệt phản chiếu chạy ngang nút khi hover",
+        "type": "color"
+      },
+      "action-gradient-from": {
+        "value": "#c94d00",
+        "category": "color",
+        "description": "Điểm đầu gradient của hành động chính",
+        "type": "color"
+      },
+      "action-gradient-to": {
+        "value": "#a33c05",
+        "category": "color",
+        "description": "Điểm cuối gradient của hành động chính",
+        "type": "color"
       }
     },
     "dark": {
@@ -948,6 +1134,18 @@
         "value": "#52647e",
         "category": "color",
         "description": "Vai trò line-strong",
+        "type": "color"
+      },
+      "line-soft": {
+        "value": "#22314a",
+        "category": "color",
+        "description": "Đường phân cách mảnh trong khối dữ liệu",
+        "type": "color"
+      },
+      "surface-inset": {
+        "value": "#101a28",
+        "category": "color",
+        "description": "Nền vùng phụ bên trong khối dữ liệu",
         "type": "color"
       },
       "ring": {
@@ -1062,6 +1260,90 @@
         "value": "{surface}",
         "category": "color",
         "description": "Trạng thái focus-offset",
+        "type": "color"
+      },
+      "glass": {
+        "value": "#141f30b8",
+        "category": "color",
+        "description": "Nền kính cho thanh trên, panel điều hướng và widget",
+        "type": "color"
+      },
+      "glass-strong": {
+        "value": "#1b293dd9",
+        "category": "color",
+        "description": "Kính đậm hơn cho lớp nổi như hộp thoại",
+        "type": "color"
+      },
+      "glass-border": {
+        "value": "#ffffff24",
+        "category": "color",
+        "description": "Viền sáng của khối kính",
+        "type": "color"
+      },
+      "glass-highlight": {
+        "value": "#ffffff30",
+        "category": "color",
+        "description": "Vệt sáng 1px ở mép trên khối kính",
+        "type": "color"
+      },
+      "mist-warm": {
+        "value": "#ff9b4729",
+        "category": "color",
+        "description": "Vệt sương cam phía trên trái",
+        "type": "color"
+      },
+      "mist-violet": {
+        "value": "#7c5cff33",
+        "category": "color",
+        "description": "Vệt sương tím phía trên phải",
+        "type": "color"
+      },
+      "mist-cyan": {
+        "value": "#1fc8ee26",
+        "category": "color",
+        "description": "Vệt sương lam phía dưới",
+        "type": "color"
+      },
+      "aurora-from": {
+        "value": "#2a1d12",
+        "category": "color",
+        "description": "Điểm đầu dải cực quang",
+        "type": "color"
+      },
+      "aurora-via": {
+        "value": "#201b33",
+        "category": "color",
+        "description": "Điểm giữa dải cực quang",
+        "type": "color"
+      },
+      "aurora-to": {
+        "value": "#10202e",
+        "category": "color",
+        "description": "Điểm cuối dải cực quang",
+        "type": "color"
+      },
+      "glow-soft": {
+        "value": "#ffad6b33",
+        "category": "color",
+        "description": "Quầng sáng quanh hành động chính và focus",
+        "type": "color"
+      },
+      "sheen": {
+        "value": "#ffffff2e",
+        "category": "color",
+        "description": "Vệt phản chiếu chạy ngang nút khi hover",
+        "type": "color"
+      },
+      "action-gradient-from": {
+        "value": "#ffc08a",
+        "category": "color",
+        "description": "Điểm đầu gradient của hành động chính",
+        "type": "color"
+      },
+      "action-gradient-to": {
+        "value": "#f09048",
+        "category": "color",
+        "description": "Điểm cuối gradient của hành động chính",
         "type": "color"
       }
     }
@@ -1259,6 +1541,96 @@
       "description": "Ánh xạ thành phần content-max-width",
       "type": "dimension"
     },
+    "page-max-width": {
+      "value": "1560px",
+      "category": "component",
+      "description": "Bề rộng tối đa khung nội dung trang nghiệp vụ",
+      "type": "dimension"
+    },
+    "page-gutter": {
+      "value": "{space-6}",
+      "category": "component",
+      "description": "Lề ngang khung nội dung",
+      "type": "dimension"
+    },
+    "glass-blur": {
+      "value": "20px",
+      "category": "component",
+      "description": "Độ mờ hậu cảnh của khối kính",
+      "type": "dimension"
+    },
+    "glass-saturate": {
+      "value": "140%",
+      "category": "component",
+      "description": "Độ bão hòa màu xuyên qua khối kính",
+      "type": "dimension"
+    },
+    "header-glass-bg": {
+      "value": "{glass-strong}",
+      "category": "component",
+      "description": "Nền kính của thanh trên",
+      "type": "color"
+    },
+    "rail-glass-bg": {
+      "value": "{glass}",
+      "category": "component",
+      "description": "Nền kính của thanh điều hướng",
+      "type": "color"
+    },
+    "card-glass-bg": {
+      "value": "{glass}",
+      "category": "component",
+      "description": "Nền kính của widget bento",
+      "type": "color"
+    },
+    "card-glass-border": {
+      "value": "{glass-border}",
+      "category": "component",
+      "description": "Viền của widget bento",
+      "type": "color"
+    },
+    "card-glass-highlight": {
+      "value": "{glass-highlight}",
+      "category": "component",
+      "description": "Vệt sáng mép trên widget",
+      "type": "color"
+    },
+    "bento-gap": {
+      "value": "{space-4}",
+      "category": "component",
+      "description": "Khoảng cách giữa các ô bento",
+      "type": "dimension"
+    },
+    "bento-radius": {
+      "value": "{radius-2xl}",
+      "category": "component",
+      "description": "Bo góc của ô bento",
+      "type": "dimension"
+    },
+    "widget-padding": {
+      "value": "{panel-space}",
+      "category": "component",
+      "description": "Đệm trong widget, theo mật độ",
+      "type": "dimension"
+    },
+    "widget-radius": {
+      "value": "{radius-2xl}",
+      "category": "component",
+      "description": "Bo góc widget",
+      "type": "dimension"
+    },
+    "widget-min-height": {
+      "value": "148px",
+      "category": "component",
+      "description": "Chiều cao tối thiểu của widget số liệu",
+      "type": "dimension"
+    },
+    "onboarding-width": {
+      "value": "420px",
+      "category": "component",
+      "description": "Bề rộng thẻ hướng dẫn",
+      "type": "dimension"
+    },
     "primary": {
       "value": "{action}",
       "category": "compatibility",
@@ -1370,6 +1742,8 @@
     "color-accent": "{accent}",
     "color-accent-foreground": "{accent-foreground}",
     "color-border": "{line}",
+    "color-line-soft": "{line-soft}",
+    "color-inset": "{surface-inset}",
     "color-input": "{line-strong}",
     "color-ring": "{ring}",
     "color-success": "{success}",
@@ -1406,11 +1780,24 @@
     "color-neutral-ink": "{neutral-ink}",
     "color-neutral-light": "{neutral-light}",
     "color-neutral-muted-dark": "{neutral-muted-dark}",
+    "color-glass": "{glass}",
+    "color-glass-border": "{glass-border}",
+    "color-mist-warm": "{mist-warm}",
+    "color-mist-violet": "{mist-violet}",
+    "color-mist-cyan": "{mist-cyan}",
+    "color-glow": "{glow-soft}",
+    "radius-card": "{bento-radius}",
+    "radius-widget": "{widget-radius}",
+    "shadow-glass": "{elevation-glass}",
+    "blur-glass": "{glass-blur}",
     "spacing": "{space-1}",
     "font-sans": "var(--font-inter), Arial, sans-serif",
     "font-mono": "{type-family-mono}",
     "radius-control": "{radius-md}",
     "radius-panel": "{radius-xl}",
+    "max-w-page": "{page-max-width}",
+    "tracking-eyebrow": "{tracking-eyebrow}",
+    "tracking-display": "{tracking-tight}",
     "shadow-panel": "0 2px 8px #00204d04, 0 0 0 1px var(--line)",
     "shadow-floating": "{shadow}",
     "animate-enter": "enter var(--duration-normal) var(--ease-enter)",

@@ -10,6 +10,11 @@ import {
 import type { ActorContext } from "../../../../core/auth/actor-context.js";
 import { NotificationEvents } from "../../../../core/events/notification-events.js";
 import {
+  TASK_BLOCKERS,
+  type BlockerRef,
+  type TaskBlockersPort,
+} from "./blocker.port.js";
+import {
   TASK_COMMENT_SINK,
   type TaskCommentSinkPort,
 } from "./comment-sink.port.js";
@@ -30,6 +35,7 @@ import {
 } from "./dto/task-workflow.dto.js";
 import type {
   AllowedEntry,
+  AllowedMove,
   DecisionInput,
   ProposalDto,
   ProposalInput,
@@ -56,11 +62,11 @@ const TERMINAL_MESSAGE =
   "Công việc đã ở trạng thái kết thúc và không thể chuyển tiếp.";
 const PENDING_MESSAGE =
   "Công việc đã có một đề xuất đang chờ duyệt. Vui lòng chờ Quản lý xử lý.";
+/** Entering this status waits on the dependency graph. */
+const START_STATUS = "Đang làm";
 
-interface AllowedMove {
-  code: string;
-  to: string;
-}
+/** A move before the dependency gate is applied. */
+type Move = Pick<AllowedMove, "code" | "to">;
 
 @Injectable()
 export class TaskWorkflowService {
@@ -73,6 +79,9 @@ export class TaskWorkflowService {
     @Optional()
     @Inject(QA_GATE)
     private readonly qa?: QaGatePort,
+    @Optional()
+    @Inject(TASK_BLOCKERS)
+    private readonly blockers?: TaskBlockersPort,
     @Optional() private readonly events?: NotificationEvents,
   ) {}
 
@@ -96,9 +105,13 @@ export class TaskWorkflowService {
     const history = await this.repository.history(taskId);
     const pending = await this.repository.pendingProposal(taskId);
     const restoreStatus = this.restoreStatus(history);
+    const open = await this.openBlockers([taskId]);
     return taskStateSchema.parse({
       task,
-      allowed: this.allowedMoves(task, restoreStatus, actor),
+      allowed: this.decorate(
+        this.allowedMoves(task, restoreStatus, actor),
+        open.get(taskId)?.length ?? 0,
+      ),
       pendingProposal: pending,
       restoreStatus,
       history,
@@ -139,13 +152,17 @@ export class TaskWorkflowService {
       known.map((task) => task.id),
     );
     const pendingByTask = new Map(pending.map((item) => [item.taskId, item]));
+    const open = await this.openBlockers(known.map((task) => task.id));
     return {
       items: known.map((task) => {
         const restoreStatus = holds.get(task.id) ?? null;
         return allowedEntrySchema.parse({
           taskId: task.id,
           status: task.status,
-          allowed: this.allowedMoves(task, restoreStatus, actor),
+          allowed: this.decorate(
+            this.allowedMoves(task, restoreStatus, actor),
+            open.get(task.id)?.length ?? 0,
+          ),
           pendingProposal: pendingByTask.get(task.id) ?? null,
           restoreStatus,
         });
@@ -196,12 +213,16 @@ export class TaskWorkflowService {
         "Deadline đã qua. Quản lý cần đặt Deadline mới trước khi chuyển Làm lại.",
       );
     if (rule.code === "TR-07") this.assertResumeAllowed(task, input.toStatus);
-    const override = await this.assertCompletionAllowed(
+    const startOverride = await this.assertStartAllowed(
       rule,
       task,
+      input.toStatus,
       actor,
       overrideReason,
     );
+    const override =
+      startOverride ||
+      (await this.assertCompletionAllowed(rule, task, actor, overrideReason));
     // Bypassing the QA gate is a reason of its own, so it keeps the same trail.
     const recorded = override ? overrideReason : reason;
 
@@ -380,7 +401,7 @@ export class TaskWorkflowService {
     task: TaskStateSnapshot,
     restoreStatus: string | null,
     actor: ActorContext,
-  ): AllowedMove[] {
+  ): Move[] {
     if (isTerminal(task.status)) return [];
     return rulesFrom(task.status).flatMap((rule) => {
       if (!this.mayAct(rule, task, actor)) return [];
@@ -467,6 +488,19 @@ export class TaskWorkflowService {
     );
   }
 
+  /** Only the move into work waits on the dependency graph; the rest stay free. */
+  private decorate(moves: Move[], open: number): AllowedMove[] {
+    return moves.map((move) => ({
+      ...move,
+      blockedBy: move.to === START_STATUS ? open : 0,
+    }));
+  }
+
+  private async openBlockers(taskIds: readonly string[]) {
+    if (!this.blockers) return new Map<string, BlockerRef[]>();
+    return this.blockers.openBlockersMany(taskIds);
+  }
+
   private async assertCompletionAllowed(
     rule: TransitionRule,
     task: TaskStateSnapshot,
@@ -481,6 +515,30 @@ export class TaskWorkflowService {
       `Còn ${gate.blocking.length} tiêu chí kiểm tra bắt buộc chưa đạt: ${gate.blocking
         .slice(0, 5)
         .join("; ")}.`,
+    );
+  }
+
+  /** A task may not enter work while a `BLOCKS` predecessor is still open. */
+  private async assertStartAllowed(
+    rule: TransitionRule,
+    task: TaskStateSnapshot,
+    toStatus: string,
+    actor: ActorContext,
+    overrideReason: string,
+  ) {
+    if (!this.blockers) return false;
+    const target = rule.code === "TR-07" ? toStatus : rule.to;
+    if (target !== START_STATUS) return false;
+    const open = await this.blockers.openBlockers(task.id);
+    if (!open.length) return false;
+    if (overrideReason && this.isManager(actor)) return true;
+    throw new ConflictException(
+      `Chưa thể bắt đầu: ${open.length} công việc chặn chưa xong (${open
+        .slice(0, 5)
+        .map((item) => item.code)
+        .join(
+          ", ",
+        )}). Hoàn tất hoặc gỡ liên kết trước, hoặc Quản lý ghi đè kèm lý do.`,
     );
   }
 
@@ -540,7 +598,7 @@ export class TaskWorkflowService {
         task,
         task.assignee,
         `Cập nhật trạng thái: ${name}`,
-        `Công việc ${task.code} đã chuyển sang ${toStatus}.`,
+        `Công việc ${task.code} đã chuyển sang ${toStatus}${override ? " (Quản lý ghi đè điều kiện chặn)" : ""}.`,
       );
   }
 

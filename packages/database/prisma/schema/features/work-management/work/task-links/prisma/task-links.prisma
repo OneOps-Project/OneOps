@@ -1,0 +1,18 @@
+/// Directed link between two tasks (Jira-style issue links). `BLOCKS` edges are
+/// the only type the workflow gate follows, so they are indexed on their own.
+model WorkTaskLink {
+  id          String   @id @default(uuid()) @db.Uuid
+  fromTaskId  String   @db.Uuid
+  toTaskId    String   @db.Uuid
+  type        String   @db.VarChar(20)
+  note        String   @default("") @db.VarChar(500)
+  createdById String?  @db.Uuid
+  createdBy   String   @db.VarChar(200)
+  createdAt   DateTime @default(now())
+
+  @@unique([fromTaskId, toTaskId])
+  @@index([fromTaskId, type])
+  @@index([toTaskId, type])
+  @@map("task_links")
+  @@schema("work_task_links")
+}

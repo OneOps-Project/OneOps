@@ -12,6 +12,8 @@ export type BoardTask = {
   available: string[];
   /** Blocks drag/drop while a proposal is waiting for a manager. */
   locked?: boolean;
+  /** Open `BLOCKS` predecessors; the card advertises the wait before a move fails. */
+  blocked?: number;
 };
 
 export type BoardMove = (taskId: string, toStatus: string) => void;

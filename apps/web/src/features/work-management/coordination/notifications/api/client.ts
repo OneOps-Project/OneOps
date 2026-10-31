@@ -4,7 +4,7 @@ import { apiRequest } from "./http";
 const recordSchema = z.object({
   id: z.uuid(),
   recipient: z.string(),
-  source: z.enum(["task", "comment", "message", "meeting"]),
+  source: z.enum(["task", "comment", "message", "meeting", "request"]),
   title: z.string(),
   body: z.string(),
   link: z.string(),

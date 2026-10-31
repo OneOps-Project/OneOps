@@ -1,19 +1,23 @@
 .board {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   overflow-x: auto;
   padding-bottom: 16px;
-  align-items: flex-start;
+  align-items: stretch;
   scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
 }
 .column {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 0;
   min-width: 232px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-panel);
   padding: 14px;
-  min-height: 240px;
+  min-height: 340px;
   scroll-snap-align: start;
 }
 .column h2 {
@@ -34,8 +38,12 @@
   line-height: 1.5;
 }
 .empty {
-  border: 1px dashed var(--line);
-  border-radius: 10px;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line-soft);
+  border-radius: var(--radius-control);
   color: var(--foreground-muted);
   font-size: 12px;
   padding: 16px 12px;
@@ -45,7 +53,7 @@
 .card {
   border: 1px solid var(--line);
   background: var(--surface);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   padding: 14px;
   margin-bottom: 12px;
   display: flex;
@@ -87,6 +95,12 @@
 .late {
   color: var(--danger);
   font-weight: 600;
+}
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
 }
 .move {
   display: flex;

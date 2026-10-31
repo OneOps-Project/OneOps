@@ -1,7 +1,11 @@
 import { z } from "zod";
 import {
+  approvalChainSchema,
   createSchema,
+  decisionResultSchema,
+  inboxPageSchema,
   recordSchema,
+  type Quorum,
   type RecordInput,
   type RecordDto,
 } from "@/features/work-management/coordination/tickets-approvals/types";
@@ -46,4 +50,49 @@ export const client = {
       { method: "POST", body: JSON.stringify(createSchema.parse(data)) },
       recordSchema,
     ),
+  approval: (id: string, signal?: AbortSignal) =>
+    apiRequest(
+      "/requests/" + id + "/approval",
+      { signal },
+      approvalChainSchema,
+    ),
+  decide: (record: RecordDto, decision: "APPROVE" | "REJECT", note: string) =>
+    apiRequest(
+      "/requests/" + record.id + "/decision",
+      {
+        method: "POST",
+        body: JSON.stringify({ decision, note, version: record.version }),
+      },
+      decisionResultSchema,
+    ),
+  cancel: (record: RecordDto, reason: string) =>
+    apiRequest(
+      "/requests/" + record.id + "/cancel",
+      {
+        method: "POST",
+        body: JSON.stringify({ reason, version: record.version }),
+      },
+      decisionResultSchema,
+    ),
+  reassign: (
+    record: RecordDto,
+    approvers: string[],
+    quorum: Quorum,
+    note: string,
+  ) =>
+    apiRequest(
+      "/requests/" + record.id + "/reassign",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          approvers,
+          quorum,
+          note,
+          version: record.version,
+        }),
+      },
+      decisionResultSchema,
+    ),
+  inbox: (signal?: AbortSignal) =>
+    apiRequest("/requests/inbox", { signal }, inboxPageSchema),
 };

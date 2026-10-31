@@ -36,13 +36,14 @@ test("token studio resolves theme/density, filters tokens and exports complete p
   const response = await page.request.get("/tokens/dark-compact.json");
   expect(response.ok()).toBeTruthy();
   const json = await response.json();
-  expect(Object.keys(json.tokens)).toHaveLength(187);
+  const names = Object.keys(json.tokens);
+  expect(names).toHaveLength(233);
   expect(json.tokens["button-height"]).toBe("34px");
   await page.getByRole("button", { name: "Đặt lại", exact: true }).click();
   await page
     .getByRole("combobox", { name: "Lọc lớp token", exact: true })
     .selectOption("component");
-  await expect(page.getByRole("row")).not.toHaveCount(188);
+  await expect(page.getByRole("row")).not.toHaveCount(names.length + 1);
   await page
     .getByRole("textbox", { name: "Tìm design token", exact: true })
     .fill("not-a-real-token");

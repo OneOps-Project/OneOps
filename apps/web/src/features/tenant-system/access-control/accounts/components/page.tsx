@@ -110,33 +110,36 @@ export function ModulePage() {
   return (
     <div className="module-view">
       <section className="records-panel">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="page-header">
           <div>
+            <span className="eyebrow">Hệ thống · Truy cập</span>
             <h1>{definition.title}</h1>
             <p>
               Chỉ có hai vai trò Nhân viên và Quản lý; chức danh không cấp
               quyền. Mọi thay đổi quyền đều được lưu lịch sử.
             </p>
           </div>
-          <Button onClick={() => setCreating(true)}>Thêm tài khoản</Button>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Tổng tài khoản</p>
-            <p className="text-2xl font-semibold">{accounts.length}</p>
-          </div>
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Quản lý</p>
-            <p className="text-2xl font-semibold">{managers}</p>
-          </div>
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Đã khóa</p>
-            <p className="text-2xl font-semibold">{locked}</p>
+          <div className="page-actions">
+            <Button onClick={() => setCreating(true)}>Thêm tài khoản</Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <dl className="metric-strip">
+          <div className="metric">
+            <dt>Tổng tài khoản</dt>
+            <dd>{accounts.length}</dd>
+          </div>
+          <div className="metric">
+            <dt>Quản lý</dt>
+            <dd>{managers}</dd>
+          </div>
+          <div className="metric">
+            <dt>Đã khóa</dt>
+            <dd>{locked}</dd>
+          </div>
+        </dl>
+
+        <div className="toolbar">
           <Input
             aria-label="Tìm tài khoản"
             placeholder="Tìm theo tên đăng nhập, tên hiển thị, email…"

@@ -80,6 +80,11 @@ export const permissionCatalog: readonly CatalogEntry[] = [
     label: "Bình luận công việc",
   },
   {
+    key: "work-management/work/task-links",
+    group: "work-management",
+    label: "Liên kết & phụ thuộc công việc",
+  },
+  {
     key: "work-management/work/kanban",
     group: "work-management",
     label: "Bảng Kanban",

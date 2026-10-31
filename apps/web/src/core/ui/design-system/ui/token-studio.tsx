@@ -89,8 +89,8 @@ export function TokenStudio() {
     return String(values[row.name]);
   }
   return (
-    <div className="min-h-full bg-background text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-5 py-4 sm:px-8">
+    <div className="min-h-full text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-glass-border bg-glass px-5 py-3 backdrop-blur-glass sm:px-8">
         <Link
           href="/design-system"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
@@ -103,55 +103,60 @@ export function TokenStudio() {
         <AppearanceControls />
       </div>
       <div className="mx-auto max-w-[1500px] space-y-7 px-5 py-7 sm:px-8 sm:py-10">
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-surface p-6 sm:p-8">
-          <div className="mb-4 flex items-center gap-2">
-            <Badge variant="brand">
-              <Palette className="size-3" />
-              OneOps Tokens
-            </Badge>
-            <Badge>v{data.version}</Badge>
-          </div>
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                Design tokens
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                Một nguồn dữ liệu cho màu sắc, chữ, khoảng cách và trạng thái
-                của toàn bộ giao diện. Thay đổi token gốc để đồng bộ các
-                component.
-              </p>
+        <section className="hero" aria-labelledby="tokens-title">
+          <div className="hero-copy max-w-none">
+            <div className="mb-4 flex items-center gap-2">
+              <Badge variant="brand">
+                <Palette className="size-3" />
+                OneOps Tokens
+              </Badge>
+              <Badge>v{data.version}</Badge>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={() =>
-                  downloadDesignTokens(preferences.theme, preferences.density)
-                }
-              >
-                <Download />
-                Tải cấu hình hiện tại
-              </Button>
-              <Button asChild variant="secondary">
-                <a href="/tokens/oneops.tokens.json" download>
-                  <Download />
-                  Tải bộ đầy đủ
-                </a>
-              </Button>
-            </div>
-          </div>
-          <div className="mt-7 grid gap-3 border-t border-border pt-5 sm:grid-cols-3">
-            {[
-              [String(data.catalog.length), "token có tên và mô tả"],
-              ["03", "lớp tham chiếu"],
-              ["04", "cấu hình theme × mật độ"],
-            ].map(([value, label]) => (
-              <div key={label} className="flex items-baseline gap-2">
-                <span className="text-xl font-semibold tabular-nums">
-                  {value}
-                </span>
-                <span className="text-xs text-muted-foreground">{label}</span>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <h1
+                  id="tokens-title"
+                  className="text-3xl font-semibold tracking-tight sm:text-4xl"
+                >
+                  Design tokens
+                </h1>
+                <p className="hero-lede max-w-2xl">
+                  Một nguồn dữ liệu cho màu sắc, chữ, khoảng cách và trạng thái
+                  của toàn bộ giao diện. Thay đổi token gốc để đồng bộ các
+                  component.
+                </p>
               </div>
-            ))}
+              <div className="hero-actions">
+                <Button
+                  onClick={() =>
+                    downloadDesignTokens(preferences.theme, preferences.density)
+                  }
+                >
+                  <Download />
+                  Tải cấu hình hiện tại
+                </Button>
+                <Button asChild variant="secondary">
+                  <a href="/tokens/oneops.tokens.json" download>
+                    <Download />
+                    Tải bộ đầy đủ
+                  </a>
+                </Button>
+              </div>
+            </div>
+            <div className="mt-7 grid gap-3 border-t border-glass-border pt-5 sm:grid-cols-3">
+              {[
+                [String(data.catalog.length), "token có tên và mô tả"],
+                ["03", "lớp tham chiếu"],
+                ["04", "cấu hình theme × mật độ"],
+              ].map(([value, label]) => (
+                <div key={label} className="flex items-baseline gap-2">
+                  <span className="text-xl font-semibold tabular-nums">
+                    {value}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
         <div className="grid gap-3 md:grid-cols-3">

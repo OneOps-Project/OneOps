@@ -1,0 +1,49 @@
+/// Automation rules evaluated by the workflow engine. Conditions and actions
+/// are stored as JSON text so a rule can grow without a migration each time.
+model AutomationRule {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(160)
+  description String    @default("") @db.VarChar(500)
+  entity      String    @default("task") @db.VarChar(20)
+  trigger     String    @default("updated") @db.VarChar(20)
+  condition   String    @default("[]") @db.Text
+  actions     String    @default("[]") @db.Text
+  enabled     Boolean   @default(true)
+  stopOnMatch Boolean   @default(false)
+  position    Int       @default(100)
+  lockSeconds Int       @default(3)
+  runCount    Int       @default(0)
+  lastRunAt   DateTime?
+  note        String    @default("") @db.VarChar(2000)
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([name])
+  @@index([entity, enabled, position])
+  @@map("automation_rules")
+  @@schema("tenant_automation")
+}
+
+/// One row per evaluation the engine actually performed, so a rule can be
+/// audited and replayed without reading the server log. The row keeps the rule
+/// name and id it came from but no foreign key: deleting a rule must not erase
+/// the history of what it already did to a record.
+model AutomationRun {
+  id        String   @id @default(uuid()) @db.Uuid
+  ruleId    String   @db.Uuid
+  ruleName  String   @db.VarChar(160)
+  entity    String   @db.VarChar(20)
+  entityId  String   @db.Uuid
+  code      String   @default("") @db.VarChar(40)
+  trigger   String   @db.VarChar(20)
+  outcome   String   @db.VarChar(20)
+  reason    String   @default("") @db.VarChar(500)
+  actions   String   @default("") @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([ruleId, createdAt])
+  @@index([entityId, createdAt])
+  @@map("automation_runs")
+  @@schema("tenant_automation")
+}

@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { Subject } from "rxjs";
 
-export type NotificationSource = "task" | "comment" | "message" | "meeting";
+export type NotificationSource =
+  "task" | "comment" | "message" | "meeting" | "request";
 
 export interface NotificationEvent {
   source: NotificationSource;

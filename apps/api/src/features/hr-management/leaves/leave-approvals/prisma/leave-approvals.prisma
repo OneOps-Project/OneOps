@@ -1,0 +1,21 @@
+model LeaveDecision {
+  id            String   @id @default(uuid()) @db.Uuid
+  requestId     String   @unique @db.Uuid
+  employeeId    String   @db.VarChar(64)
+  employeeName  String   @db.VarChar(200)
+  leaveType     String   @default("ANNUAL") @db.VarChar(20)
+  fromDate      String   @db.VarChar(10)
+  toDate        String   @db.VarChar(10)
+  days          Float    @default(0)
+  reason        String   @db.VarChar(1000)
+  status        String   @db.VarChar(20)
+  decidedBy     String   @db.VarChar(200)
+  decisionNote  String   @default("") @db.VarChar(500)
+  decidedAt     DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([status, decidedAt])
+  @@index([employeeId, decidedAt])
+  @@map("leave_decisions")
+  @@schema("hr_leave_approvals")
+}

@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import {
+  ProjectSpacesModule,
+  type SprintTaskPort,
+  type SprintTaskSnapshot,
+} from "./projects/project-spaces/index.js";
+import {
   MilestonesQaService,
   type QaTaskRefPort,
   type QaTaskSnapshot,
@@ -10,11 +15,19 @@ import {
 } from "./projects/timesheets/index.js";
 import { TaskCommentsService } from "./work/task-comments/index.js";
 import type { TaskSnapshotPort } from "./work/task-comments/index.js";
-import { TasksService, taskStatusSchema } from "./work/tasks/index.js";
+import { TaskLinksService } from "./work/task-links/index.js";
+import type { TaskDirectoryPort, TaskRef } from "./work/task-links/index.js";
+import {
+  TasksModule,
+  TasksService,
+  taskStatusSchema,
+} from "./work/tasks/index.js";
 import type { TaskCommentSinkPort } from "./work/task-workflow/index.js";
 import type {
+  BlockerRef,
   QaGatePort,
   QaGateStatus,
+  TaskBlockersPort,
   TaskStatePort,
   TaskStateSnapshot,
 } from "./work/task-workflow/index.js";
@@ -142,3 +155,106 @@ export class TimesheetTaskRefComposition implements TimesheetTaskRefPort {
     }
   }
 }
+
+/** Task lookup for links: one task at a time, or a page of many at once. */
+@Injectable()
+export class TaskDirectoryComposition implements TaskDirectoryPort {
+  constructor(private readonly tasks: TasksService) {}
+
+  async get(taskId: string): Promise<TaskRef> {
+    return this.ref(await this.tasks.get(taskId));
+  }
+
+  async find(taskIds: readonly string[]): Promise<TaskRef[]> {
+    const items: TaskRef[] = [];
+    for (let index = 0; index < taskIds.length; index += 100) {
+      const chunk = taskIds.slice(index, index + 100);
+      const result = await this.tasks.list({
+        page: 1,
+        pageSize: 100,
+        ids: chunk.join(","),
+      });
+      items.push(...result.items.map((task) => this.ref(task)));
+    }
+    return items;
+  }
+
+  /** The port carries exactly these fields; links reject anything else. */
+  private ref(task: TaskView): TaskRef {
+    return {
+      id: task.id,
+      code: task.code,
+      name: task.name,
+      status: task.status,
+      assignee: task.assignee,
+    };
+  }
+}
+
+/** Dependency gate for the workflow, backed by the links feature. */
+@Injectable()
+export class TaskBlockersComposition implements TaskBlockersPort {
+  constructor(private readonly links: TaskLinksService) {}
+
+  async openBlockers(taskId: string): Promise<BlockerRef[]> {
+    return this.links.openBlockers(taskId);
+  }
+
+  async openBlockersMany(
+    taskIds: readonly string[],
+  ): Promise<Map<string, BlockerRef[]>> {
+    return this.links.openBlockersMany(taskIds);
+  }
+}
+
+/** Task read model for the sprint board: snapshots plus planning candidates. */
+@Injectable()
+export class SprintTaskComposition implements SprintTaskPort {
+  constructor(private readonly tasks: TasksService) {}
+
+  async snapshots(taskIds: readonly string[]): Promise<SprintTaskSnapshot[]> {
+    const items: SprintTaskSnapshot[] = [];
+    for (let index = 0; index < taskIds.length; index += 100) {
+      const chunk = taskIds.slice(index, index + 100);
+      const result = await this.tasks.list({
+        page: 1,
+        pageSize: 100,
+        ids: chunk.join(","),
+      });
+      items.push(...result.items.map((task) => this.snapshot(task)));
+    }
+    return items;
+  }
+
+  async candidates(
+    scope: string,
+    excludeTaskIds: readonly string[],
+  ): Promise<SprintTaskSnapshot[]> {
+    const exclude = new Set(excludeTaskIds);
+    const result = await this.tasks.list({
+      page: 1,
+      pageSize: 100,
+      ...(scope ? { scope } : {}),
+    });
+    return result.items
+      .filter((task) => !exclude.has(task.id) && task.status !== "Đã hủy")
+      .slice(0, 60)
+      .map((task) => this.snapshot(task));
+  }
+
+  private snapshot(task: TaskView): SprintTaskSnapshot {
+    return {
+      id: task.id,
+      code: task.code,
+      name: task.name,
+      status: task.status,
+      assignee: task.assignee,
+    };
+  }
+}
+
+/** Configured project spaces module; imported wherever the service is needed. */
+export const projectSpacesModule = ProjectSpacesModule.forRoot({
+  tasks: SprintTaskComposition,
+  imports: [TasksModule],
+});

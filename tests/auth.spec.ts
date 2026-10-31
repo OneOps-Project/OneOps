@@ -46,6 +46,8 @@ test("sessions gate the app, reject wrong passwords and force the first change",
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "Tên đăng nhập hoặc mật khẩu không đúng.",
   );
+  // Ảnh bàn giao cho trạng thái lỗi trên bố cục đăng nhập mới.
+  await page.screenshot({ path: "docs/screenshots/auth-desktop.png" });
 
   await page.getByLabel("Mật khẩu", { exact: true }).fill(temporary);
   await page.getByRole("button", { name: "Đăng nhập" }).click();

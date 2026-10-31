@@ -1,0 +1,40 @@
+model AttendancePeriod {
+  id        String   @id @default(uuid()) @db.Uuid
+  periodKey String   @unique @db.VarChar(7)
+  name      String   @db.VarChar(150)
+  fromDate  String   @db.VarChar(10)
+  toDate    String   @db.VarChar(10)
+  status    String   @default("DRAFT") @db.VarChar(20)
+  note      String   @default("") @db.VarChar(500)
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lines AttendancePeriodLine[]
+
+  @@index([status, fromDate])
+  @@map("attendance_periods")
+  @@schema("hr_attendance_reports")
+}
+
+model AttendancePeriodLine {
+  id              String   @id @default(uuid()) @db.Uuid
+  periodId        String   @db.Uuid
+  employeeId      String   @db.VarChar(64)
+  employeeName    String   @db.VarChar(200)
+  workedDays      Float    @default(0)
+  paidLeaveDays   Float    @default(0)
+  unpaidLeaveDays Float    @default(0)
+  overtimeHours   Float    @default(0)
+  note            String   @default("") @db.VarChar(500)
+  version         Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  period AttendancePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, employeeId])
+  @@index([periodId])
+  @@map("attendance_period_lines")
+  @@schema("hr_attendance_reports")
+}

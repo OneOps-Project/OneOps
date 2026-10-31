@@ -119,35 +119,36 @@ export function ModulePage() {
   return (
     <div className="module-view">
       <section className="records-panel">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="page-header">
           <div>
+            <span className="eyebrow">Hệ thống · Nhật ký</span>
             <h1>{definition.title}</h1>
             <p>
               Mọi thao tác quản trị, thay đổi cấu hình và vượt phạm vi đều được
               ghi lại cùng người thực hiện, thời điểm và giá trị trước/sau.
             </p>
           </div>
-          <Badge variant="neutral" dot>
-            Chỉ ghi thêm
-          </Badge>
+          <div className="page-actions">
+            <Badge variant="neutral" dot>
+              Chỉ ghi thêm
+            </Badge>
+          </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Bản ghi</p>
-            <p className="text-2xl font-semibold">{total}</p>
+        <dl className="metric-strip">
+          <div className="metric">
+            <dt>Bản ghi</dt>
+            <dd>{total}</dd>
           </div>
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">
-              Chức năng có ghi nhận
-            </p>
-            <p className="text-2xl font-semibold">{facets.features.length}</p>
+          <div className="metric">
+            <dt>Chức năng có ghi nhận</dt>
+            <dd>{facets.features.length}</dd>
           </div>
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Loại thao tác</p>
-            <p className="text-2xl font-semibold">{facets.actions.length}</p>
+          <div className="metric">
+            <dt>Loại thao tác</dt>
+            <dd>{facets.actions.length}</dd>
           </div>
-        </div>
+        </dl>
 
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">

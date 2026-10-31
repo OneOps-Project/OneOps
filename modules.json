@@ -44,13 +44,28 @@
     ]
   },
   {
+    "name": "task-links",
+    "feature": "work-management/work/task-links",
+    "route": "task-links",
+    "webRoute": "/work-management/tasks",
+    "kind": "resource",
+    "frontend": false,
+    "models": ["WorkTaskLink"],
+    "databaseSchema": "work_task_links",
+    "schemas": [
+      "apps/api/src/features/work-management/work/task-links/prisma/task-links.prisma"
+    ]
+  },
+  {
     "name": "project-spaces",
     "feature": "work-management/projects/project-spaces",
     "route": "projects",
     "webRoute": "/work-management/projects",
-    "model": "WorkProject",
+    "models": ["WorkProject", "ProjectSprint", "ProjectBacklogItem"],
     "databaseSchema": "work_projects",
-    "schema": "apps/api/src/features/work-management/projects/project-spaces/prisma/project-space.prisma"
+    "schemas": [
+      "apps/api/src/features/work-management/projects/project-spaces/prisma/project-space.prisma"
+    ]
   },
   {
     "name": "milestones-qa",
@@ -95,7 +110,7 @@
     "feature": "work-management/coordination/tickets-approvals",
     "route": "requests",
     "webRoute": "/work-management/tickets-approvals",
-    "model": "WorkRequest",
+    "models": ["WorkRequest", "WorkRequestApprovalStep", "WorkRequestApprover"],
     "databaseSchema": "work_requests",
     "schema": "apps/api/src/features/work-management/coordination/tickets-approvals/prisma/tickets-approvals.prisma"
   },
@@ -217,6 +232,126 @@
     "databaseSchema": "tenant_checklog",
     "schemas": [
       "apps/api/src/features/tenant-system/checklog/prisma/checklog.prisma"
+    ]
+  },
+  {
+    "name": "workflow-rules",
+    "feature": "tenant-system/automation-hub/workflow-rules",
+    "route": "workflow-rules",
+    "webRoute": "/tenant-system/workflow-rules",
+    "kind": "resource",
+    "models": ["AutomationRule", "AutomationRun"],
+    "databaseSchema": "tenant_automation",
+    "schemas": [
+      "apps/api/src/features/tenant-system/automation-hub/workflow-rules/prisma/workflow-rules.prisma"
+    ]
+  },
+  {
+    "name": "work-policies",
+    "feature": "tenant-system/organization/work-policies",
+    "route": "work-policies",
+    "webRoute": "/tenant-system/work-policies",
+    "kind": "resource",
+    "models": ["WorkPolicy", "WorkHoliday", "OfficeNetwork", "LeaveQuota"],
+    "databaseSchema": "tenant_policies",
+    "schemas": [
+      "apps/api/src/features/tenant-system/organization/work-policies/prisma/work-policies.prisma"
+    ]
+  },
+  {
+    "name": "daily-checkin",
+    "feature": "hr-management/attendance/daily-checkin",
+    "route": "daily-checkin",
+    "webRoute": "/hr-management/attendance",
+    "kind": "resource",
+    "models": ["AttendanceRecord"],
+    "databaseSchema": "hr_attendance",
+    "schemas": [
+      "apps/api/src/features/hr-management/attendance/daily-checkin/prisma/daily-checkin.prisma"
+    ]
+  },
+  {
+    "name": "workforce-board",
+    "feature": "hr-management/attendance/workforce-board",
+    "route": "workforce-board",
+    "webRoute": "/hr-management/workforce",
+    "kind": "resource",
+    "models": ["WorkforcePresence"],
+    "databaseSchema": "hr_workforce",
+    "schemas": [
+      "apps/api/src/features/hr-management/attendance/workforce-board/prisma/workforce-board.prisma"
+    ]
+  },
+  {
+    "name": "checkin-explanations",
+    "feature": "hr-management/attendance/checkin-explanations",
+    "route": "checkin-explanations",
+    "webRoute": "/hr-management/explanations",
+    "kind": "resource",
+    "models": ["CheckinExplanation"],
+    "databaseSchema": "hr_checkin_explanations",
+    "schemas": [
+      "apps/api/src/features/hr-management/attendance/checkin-explanations/prisma/checkin-explanations.prisma"
+    ]
+  },
+  {
+    "name": "shifts-schedules",
+    "feature": "hr-management/attendance/shifts-schedules",
+    "route": "shifts-schedules",
+    "webRoute": "/hr-management/shifts",
+    "kind": "resource",
+    "models": ["ShiftTemplate", "SchedulePattern", "ScheduleAssignment"],
+    "databaseSchema": "hr_shifts",
+    "schemas": [
+      "apps/api/src/features/hr-management/attendance/shifts-schedules/prisma/shifts-schedules.prisma"
+    ]
+  },
+  {
+    "name": "attendance-reports",
+    "feature": "hr-management/attendance/attendance-reports",
+    "route": "attendance-reports",
+    "webRoute": "/hr-management/attendance-reports",
+    "kind": "resource",
+    "models": ["AttendancePeriod", "AttendancePeriodLine"],
+    "databaseSchema": "hr_attendance_reports",
+    "schemas": [
+      "apps/api/src/features/hr-management/attendance/attendance-reports/prisma/attendance-reports.prisma"
+    ]
+  },
+  {
+    "name": "leave-requests",
+    "feature": "hr-management/leaves/leave-requests",
+    "route": "leave-requests",
+    "webRoute": "/hr-management/leaves",
+    "kind": "resource",
+    "models": ["LeaveRequest"],
+    "databaseSchema": "hr_leaves",
+    "schemas": [
+      "apps/api/src/features/hr-management/leaves/leave-requests/prisma/leave-requests.prisma"
+    ]
+  },
+  {
+    "name": "leave-approvals",
+    "feature": "hr-management/leaves/leave-approvals",
+    "route": "leave-approvals",
+    "webRoute": "/hr-management/leave-approvals",
+    "kind": "resource",
+    "models": ["LeaveDecision"],
+    "databaseSchema": "hr_leave_approvals",
+    "schemas": [
+      "apps/api/src/features/hr-management/leaves/leave-approvals/prisma/leave-approvals.prisma"
+    ]
+  },
+  {
+    "name": "resource-capacity",
+    "feature": "hr-management/employees/resource-capacity",
+    "route": "resource-capacity",
+    "webRoute": "/hr-management/capacity",
+    "kind": "resource",
+    "models": ["CapacityPeriod", "ProjectAllocation"],
+    "databaseSchema": "hr_capacity",
+    "schemas": [
+      "apps/api/src/features/hr-management/employees/resource-capacity/prisma/resource-capacity.prisma"
     ]
   }
 ]

@@ -131,3 +131,141 @@
     font-size: 20px;
   }
 }
+.sprintShell {
+  display: grid;
+  gap: 16px;
+}
+.sprintHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.sprintHead h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.sprintHead p {
+  margin: 6px 0 0;
+  color: var(--foreground-muted);
+  font-size: 13px;
+}
+.sprintHead select {
+  width: auto;
+  min-width: 220px;
+}
+.sprintTile {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+.sprintTile h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.sprintCard {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 14px;
+}
+.sprintCardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.sprintMeta {
+  color: var(--foreground-muted);
+  font-size: 12px;
+}
+.sprintBar {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+.sprintBarFill {
+  display: block;
+  height: 100%;
+  background: var(--action);
+  border-radius: var(--radius-pill);
+}
+.sprintList {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sprintRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-control);
+}
+.sprintRow select {
+  width: auto;
+  min-width: 140px;
+}
+.sprintCode {
+  color: var(--foreground-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.sprintName {
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.sprintPoints input {
+  width: 68px;
+  text-align: right;
+}
+.sprintActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sprintFields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.sprintFields input,
+.sprintFields select {
+  width: auto;
+  min-width: 170px;
+}
+.sprintFields input[type="number"] {
+  width: 96px;
+  min-width: 96px;
+}
+.sprintCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--foreground-muted);
+  font-size: 12px;
+}
+.sprintHint {
+  margin: 0;
+  color: var(--foreground-muted);
+  font-size: 12px;
+}
+.sprintForm summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--action);
+}

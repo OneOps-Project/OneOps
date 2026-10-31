@@ -1,0 +1,52 @@
+model ShiftTemplate {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(150)
+  nameKey       String   @unique @db.VarChar(150)
+  startTime     String   @db.VarChar(5)
+  endTime       String   @db.VarChar(5)
+  breakMinutes  Int      @default(0)
+  nightShift    Boolean  @default(false)
+  effectiveFrom String   @db.VarChar(10)
+  note          String   @default("") @db.VarChar(500)
+  status        String   @default("ACTIVE") @db.VarChar(20)
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, name])
+  @@map("shift_templates")
+  @@schema("hr_shifts")
+}
+
+model SchedulePattern {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(150)
+  nameKey   String   @unique @db.VarChar(150)
+  slots     Json
+  note      String   @default("") @db.VarChar(500)
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("schedule_patterns")
+  @@schema("hr_shifts")
+}
+
+model ScheduleAssignment {
+  id           String   @id @default(uuid()) @db.Uuid
+  employeeId   String   @db.VarChar(64)
+  employeeName String   @db.VarChar(200)
+  workDate     String   @db.VarChar(10)
+  shiftId      String   @db.Uuid
+  source       String   @default("MANUAL") @db.VarChar(20)
+  note         String   @default("") @db.VarChar(500)
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([employeeId, workDate])
+  @@index([workDate, shiftId])
+  @@map("schedule_assignments")
+  @@schema("hr_shifts")
+}

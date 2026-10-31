@@ -21,7 +21,7 @@ export const readAllSchema = z.object({ recipient }).strict();
 export const recordSchema = z.object({
   id: z.uuid(),
   recipient,
-  source: z.enum(["task", "comment", "message", "meeting"]),
+  source: z.enum(["task", "comment", "message", "meeting", "request"]),
   title: z.string().trim().min(1).max(500),
   body: z.string().trim().max(2000).default(""),
   link: z.string().trim().min(1).max(500),

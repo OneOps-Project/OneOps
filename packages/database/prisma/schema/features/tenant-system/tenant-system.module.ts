@@ -10,13 +10,17 @@ import {
   TenantAuthModule,
 } from "./access-control/tenant-auth/index.js";
 import { AccountsCredentials } from "./accounts-credentials.js";
+import { WorkflowRulesModule } from "./automation-hub/workflow-rules/index.js";
 import { ChecklogModule } from "./checklog/index.js";
+import { WorkPoliciesModule } from "./organization/work-policies/index.js";
 import { PermissionAudit } from "./permission-audit.js";
 
 @Module({
   imports: [
     AccountsModule,
     ChecklogModule,
+    WorkPoliciesModule,
+    WorkflowRulesModule,
     RolesPermissionsModule.forRoot({
       audit: PermissionAudit,
       imports: [ChecklogModule],

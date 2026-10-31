@@ -1,5 +1,6 @@
 import { Module, type DynamicModule, type Type } from "@nestjs/common";
 import { DatabaseModule } from "../../../../core/database/database.module.js";
+import { TASK_BLOCKERS, type TaskBlockersPort } from "./blocker.port.js";
 import {
   TASK_COMMENT_SINK,
   type TaskCommentSinkPort,
@@ -11,8 +12,9 @@ import { TaskWorkflowRepository } from "./task-workflow.repository.js";
 import { TaskWorkflowService } from "./task-workflow.service.js";
 
 /**
- * The task aggregate, the comment sink and the QA precondition are supplied by
- * the main composition, so this feature never imports another feature.
+ * The task aggregate, the comment sink, the QA precondition and the dependency
+ * graph are supplied by the main composition, so this feature never imports
+ * another feature.
  */
 @Module({})
 export class TaskWorkflowModule {
@@ -20,6 +22,7 @@ export class TaskWorkflowModule {
     tasks: Type<TaskStatePort>;
     comments?: Type<TaskCommentSinkPort>;
     qa?: Type<QaGatePort>;
+    blockers?: Type<TaskBlockersPort>;
     imports?: DynamicModule["imports"];
   }): DynamicModule {
     return {
@@ -34,6 +37,9 @@ export class TaskWorkflowModule {
           ? [{ provide: TASK_COMMENT_SINK, useClass: options.comments }]
           : []),
         ...(options.qa ? [{ provide: QA_GATE, useClass: options.qa }] : []),
+        ...(options.blockers
+          ? [{ provide: TASK_BLOCKERS, useClass: options.blockers }]
+          : []),
       ],
       exports: [TaskWorkflowService],
     };

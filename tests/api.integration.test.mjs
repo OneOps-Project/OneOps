@@ -2,7 +2,11 @@ import test, { before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import modules from "../modules.json" with { type: "json" };
-import { databaseUrl, cleanDatabase } from "../apps/api/test/database.mjs";
+import {
+  databaseUrl,
+  cleanDatabase,
+  runSql,
+} from "../apps/api/test/database.mjs";
 let app, origin, createApp;
 const statuses = {
   "workspace-today": "Đang dùng",
@@ -1647,6 +1651,153 @@ test("task workflow owns every legal move and rejects the rest", async () => {
   const restored = await transition(afterHold.task, "Cần làm");
   assert.equal(restored.status, "Cần làm");
 });
+test("task links reject cycles and gate the start of a blocked task", async () => {
+  const create = async (code) =>
+    (await request("/tasks", "POST", input("tasks", { code }))).body;
+  const first = await create("WORK-20");
+  const second = await create("WORK-21");
+  const third = await create("WORK-22");
+
+  // Self links and unknown tasks never reach the table.
+  assert.equal(
+    (
+      await request("/task-links", "POST", {
+        fromTaskId: first.id,
+        toTaskId: first.id,
+        type: "BLOCKS",
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request("/task-links", "POST", {
+        fromTaskId: first.id,
+        toTaskId: "00000000-0000-4000-8000-000000000000",
+        type: "BLOCKS",
+      })
+    ).status,
+    404,
+  );
+
+  const link = await request("/task-links", "POST", {
+    fromTaskId: first.id,
+    toTaskId: second.id,
+    type: "BLOCKS",
+    note: "Chờ API xong trước",
+  });
+  assert.equal(link.status, 201, JSON.stringify(link.body));
+  assert.equal(link.body.counterpart.code, "WORK-21");
+  // The same pair is refused in both directions before the unique index fires.
+  assert.equal(
+    (
+      await request("/task-links", "POST", {
+        fromTaskId: first.id,
+        toTaskId: second.id,
+        type: "BLOCKS",
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request("/task-links", "POST", {
+        fromTaskId: second.id,
+        toTaskId: first.id,
+        type: "BLOCKS",
+      })
+    ).status,
+    409,
+  );
+
+  // second blocks third, so third blocking first would close a cycle.
+  assert.equal(
+    (
+      await request("/task-links", "POST", {
+        fromTaskId: second.id,
+        toTaskId: third.id,
+        type: "BLOCKS",
+      })
+    ).status,
+    201,
+  );
+  const cycle = await request("/task-links", "POST", {
+    fromTaskId: third.id,
+    toTaskId: first.id,
+    type: "BLOCKS",
+  });
+  assert.equal(cycle.status, 409, JSON.stringify(cycle.body));
+  assert.match(cycle.body.message, /vòng lặp/);
+
+  // The board learns how many blockers are still open for each card.
+  const chips = (
+    await request(
+      `/task-links/blockers?taskIds=${first.id},${second.id},${third.id}`,
+    )
+  ).body.items;
+  assert.deepEqual(
+    chips.map((item) => [item.taskId, item.total, item.open]),
+    [
+      [first.id, 0, 0],
+      [second.id, 1, 1],
+      [third.id, 1, 1],
+    ],
+  );
+
+  // A blocked task cannot enter work, and the state explains why.
+  const state = (await request(`/task-workflow/tasks/${second.id}/state`)).body;
+  assert.deepEqual(
+    state.allowed.find((move) => move.code === "TR-02"),
+    { code: "TR-02", to: "Đang làm", blockedBy: 1 },
+  );
+  const refused = await request(
+    `/task-workflow/tasks/${second.id}/transitions`,
+    "POST",
+    { toStatus: "Đang làm", version: 1 },
+  );
+  assert.equal(refused.status, 409, JSON.stringify(refused.body));
+  assert.match(refused.body.message, /chặn/);
+
+  // Finishing the blocker releases the successor.
+  await completeTask(first);
+  const [afterFirst] = (
+    await request(`/task-links/blockers?taskIds=${second.id}`)
+  ).body.items;
+  assert.deepEqual([afterFirst.total, afterFirst.open], [1, 0]);
+  await transition(second, "Đang làm");
+
+  // A manager may still start a blocked task, and the reason is on the record.
+  const forced = await request(
+    `/task-workflow/tasks/${third.id}/transitions`,
+    "POST",
+    {
+      toStatus: "Đang làm",
+      version: 1,
+      overrideReason: "Khách hàng chốt tiến độ, chấp nhận rủi ro",
+    },
+  );
+  assert.equal(forced.status, 200, JSON.stringify(forced.body));
+  const trail = (await request(`/task-comments?taskId=${third.id}`)).body.items;
+  assert.ok(
+    trail.some(
+      (item) => item.kind === "SYSTEM" && item.body.startsWith("[TR-02] Khách"),
+    ),
+    JSON.stringify(trail),
+  );
+
+  // Removing a link clears the other end as well.
+  assert.equal(
+    (await request(`/task-links/${link.body.id}`, "DELETE")).status,
+    200,
+  );
+  const afterDelete = (await request(`/task-links?taskId=${second.id}`)).body;
+  assert.deepEqual(afterDelete.incoming, [], JSON.stringify(afterDelete));
+  assert.deepEqual(
+    afterDelete.outgoing.map((item) => item.counterpart.code),
+    ["WORK-22"],
+  );
+});
+
 test("proposals wait for another manager and then drive the task status", async () => {
   const task = (
     await request("/tasks", "POST", input("tasks", { code: "WORK-10" }))
@@ -2118,4 +2269,1179 @@ test("timesheets keep 15 minute steps and route approvals by threshold", async (
   assert.equal(approved.body.status, "APPROVED");
   assert.equal(approved.body.decidedByName, ADMIN.displayName);
   assert.equal(approved.body.totalMinutes, 660);
+});
+test("daily check-in, workforce board and explanations keep versioned records", async () => {
+  const record = await request("/daily-checkin", "POST", {
+    employeeId: "EMP-01",
+    employeeName: ADMIN.displayName,
+    workDate: "2026-11-02",
+    checkIn: "08:00",
+  });
+  assert.equal(record.status, 201, JSON.stringify(record.body));
+  assert.equal(record.body.status, "OPEN");
+  assert.equal(record.body.version, 1);
+  assert.equal(
+    (
+      await request("/daily-checkin", "POST", {
+        employeeId: "EMP-01",
+        employeeName: ADMIN.displayName,
+        workDate: "2026-11-02",
+        checkIn: "09:00",
+      })
+    ).status,
+    409,
+  );
+  const completed = await request(`/daily-checkin/${record.body.id}`, "PATCH", {
+    checkOut: "17:30",
+    version: 1,
+  });
+  assert.equal(completed.status, 200, JSON.stringify(completed.body));
+  assert.equal(completed.body.status, "COMPLETE");
+  assert.equal(completed.body.version, 2);
+  assert.equal(
+    (
+      await request(`/daily-checkin/${record.body.id}`, "PATCH", {
+        note: "Ghi chú cũ",
+        version: 1,
+      })
+    ).status,
+    409,
+  );
+  const locked = await request(
+    `/daily-checkin/${record.body.id}/lock`,
+    "POST",
+    {
+      version: 2,
+    },
+  );
+  assert.equal(locked.status, 200, JSON.stringify(locked.body));
+  assert.equal(locked.body.status, "LOCKED");
+  assert.equal(
+    (
+      await request(`/daily-checkin/${record.body.id}`, "PATCH", {
+        note: "Sửa sau khi chốt",
+        version: 3,
+      })
+    ).status,
+    409,
+  );
+
+  const presence = await request("/workforce-board", "POST", {
+    employeeId: "EMP-01",
+    employeeName: ADMIN.displayName,
+    workDate: "2026-11-02",
+    status: "REMOTE",
+    shiftLabel: "Ca hành chính",
+  });
+  assert.equal(presence.status, 201, JSON.stringify(presence.body));
+  assert.equal(
+    (
+      await request("/workforce-board", "POST", {
+        employeeId: "EMP-01",
+        employeeName: ADMIN.displayName,
+        workDate: "2026-11-02",
+      })
+    ).status,
+    409,
+  );
+  const summary = await request("/workforce-board/summary?workDate=2026-11-02");
+  assert.equal(summary.status, 200, JSON.stringify(summary.body));
+  assert.equal(summary.body.total, 1);
+  assert.deepEqual(summary.body.items, [{ status: "REMOTE", count: 1 }]);
+
+  const shortReason = await request("/checkin-explanations", "POST", {
+    employeeId: "EMP-01",
+    employeeName: ADMIN.displayName,
+    workDate: "2026-11-02",
+    reason: "quên",
+  });
+  assert.equal(shortReason.status, 400);
+  const explanation = await request("/checkin-explanations", "POST", {
+    employeeId: "EMP-01",
+    employeeName: ADMIN.displayName,
+    workDate: "2026-11-02",
+    type: "MISSED_CHECKOUT",
+    reason: "Máy chấm công mất kết nối buổi chiều",
+  });
+  assert.equal(explanation.status, 201, JSON.stringify(explanation.body));
+  assert.equal(explanation.body.status, "PENDING");
+  assert.equal(
+    (
+      await request("/checkin-explanations", "POST", {
+        employeeId: "EMP-01",
+        employeeName: ADMIN.displayName,
+        workDate: "2026-11-02",
+        type: "MISSED_CHECKOUT",
+        reason: "Gửi trùng đơn giải trình buổi chiều",
+      })
+    ).status,
+    409,
+  );
+  const decided = await request(
+    `/checkin-explanations/${explanation.body.id}/decision`,
+    "POST",
+    { status: "APPROVED", note: "Đã đối chiếu camera", version: 1 },
+  );
+  assert.equal(decided.status, 200, JSON.stringify(decided.body));
+  assert.equal(decided.body.status, "APPROVED");
+  assert.equal(decided.body.decidedBy, ADMIN.displayName);
+  assert.equal(
+    (
+      await request(
+        `/checkin-explanations/${explanation.body.id}/decision`,
+        "POST",
+        {
+          status: "REJECTED",
+          version: 2,
+        },
+      )
+    ).status,
+    409,
+  );
+});
+test("shift templates, weekly patterns and bulk assignments build the schedule", async () => {
+  const shift = await request("/shifts-schedules/shifts", "POST", {
+    name: "Ca hành chính",
+    startTime: "08:00",
+    endTime: "17:00",
+    breakMinutes: 60,
+    effectiveFrom: "2026-11-02",
+  });
+  assert.equal(shift.status, 201, JSON.stringify(shift.body));
+  assert.equal(shift.body.status, "ACTIVE");
+  assert.equal(shift.body.hours, 8);
+  assert.equal(shift.body.assignmentCount, 0);
+
+  const pattern = await request("/shifts-schedules/patterns", "POST", {
+    name: "Tuần chuẩn thứ hai",
+    slots: [{ weekday: 1, shiftId: shift.body.id }],
+  });
+  assert.equal(pattern.status, 201, JSON.stringify(pattern.body));
+  const applied = await request(
+    `/shifts-schedules/patterns/${pattern.body.id}/apply`,
+    "POST",
+    {
+      from: "2026-11-02",
+      to: "2026-11-08",
+      employees: [{ id: "EMP-01", name: ADMIN.displayName }],
+    },
+  );
+  assert.equal(applied.status, 200, JSON.stringify(applied.body));
+  assert.equal(applied.body.created, 1);
+  assert.equal(applied.body.total, 1);
+  const assignments = await request(
+    "/shifts-schedules/assignments?employeeId=EMP-01",
+  );
+  assert.equal(assignments.body.total, 1);
+  assert.equal(assignments.body.items[0].source, "PATTERN");
+  assert.equal(assignments.body.items[0].workDate, "2026-11-02");
+  assert.equal(
+    (
+      await request(`/shifts-schedules/shifts/${shift.body.id}`, "PATCH", {
+        startTime: "07:30",
+        version: 1,
+      })
+    ).status,
+    409,
+  );
+  const bulk = await request("/shifts-schedules/assignments/bulk", "POST", {
+    shiftId: shift.body.id,
+    from: "2026-11-09",
+    to: "2026-11-13",
+    weekdays: [1, 3, 5],
+    employees: [{ id: "EMP-01", name: ADMIN.displayName }],
+  });
+  assert.equal(bulk.status, 200, JSON.stringify(bulk.body));
+  assert.equal(bulk.body.total, 3);
+  assert.equal(
+    (await request("/shifts-schedules/assignments?employeeId=EMP-01")).body
+      .total,
+    4,
+  );
+});
+test("attendance report periods aggregate lines and close against edits", async () => {
+  const period = await request("/attendance-reports/periods", "POST", {
+    periodKey: "2026-11",
+    name: "Công tháng 11/2026",
+    fromDate: "2026-11-01",
+    toDate: "2026-11-30",
+  });
+  assert.equal(period.status, 201, JSON.stringify(period.body));
+  assert.equal(period.body.status, "DRAFT");
+  assert.equal(period.body.lineCount, 0);
+  assert.equal(
+    (
+      await request("/attendance-reports/periods", "POST", {
+        periodKey: "2026-11",
+        name: "Kỳ trùng tháng",
+        fromDate: "2026-11-01",
+        toDate: "2026-11-30",
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request("/attendance-reports/periods", "POST", {
+        periodKey: "2026-12",
+        name: "Kỳ lệch tháng",
+        fromDate: "2026-11-01",
+        toDate: "2026-11-30",
+      })
+    ).status,
+    422,
+  );
+  const line = await request("/attendance-reports/lines", "POST", {
+    periodId: period.body.id,
+    employeeId: "EMP-01",
+    employeeName: ADMIN.displayName,
+    workedDays: 20,
+    paidLeaveDays: 2,
+    overtimeHours: 6,
+  });
+  assert.equal(line.status, 201, JSON.stringify(line.body));
+  assert.equal(
+    (
+      await request("/attendance-reports/lines", "POST", {
+        periodId: period.body.id,
+        employeeId: "EMP-01",
+        employeeName: ADMIN.displayName,
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request("/attendance-reports/lines", "POST", {
+        periodId: period.body.id,
+        employeeId: "EMP-02",
+        employeeName: "Nguyễn Hai",
+        workedDays: 20,
+        paidLeaveDays: 10,
+        unpaidLeaveDays: 10,
+      })
+    ).status,
+    422,
+  );
+  const totals = await request(
+    `/attendance-reports/periods/${period.body.id}/summary`,
+  );
+  assert.equal(totals.status, 200, JSON.stringify(totals.body));
+  assert.deepEqual(totals.body, {
+    periodId: period.body.id,
+    headcount: 1,
+    workedDays: 20,
+    paidLeaveDays: 2,
+    unpaidLeaveDays: 0,
+    overtimeHours: 6,
+  });
+  const closed = await request(
+    `/attendance-reports/periods/${period.body.id}`,
+    "PATCH",
+    { status: "CLOSED", version: 1 },
+  );
+  assert.equal(closed.status, 200, JSON.stringify(closed.body));
+  assert.equal(closed.body.status, "CLOSED");
+  assert.equal(
+    (
+      await request("/attendance-reports/lines", "POST", {
+        periodId: period.body.id,
+        employeeId: "EMP-02",
+        employeeName: "Nguyễn Hai",
+      })
+    ).status,
+    409,
+  );
+});
+test("payment requests run an ordered approval chain the workflow owns", async () => {
+  const created = await request(
+    "/requests",
+    "POST",
+    input("tickets-approvals", {
+      name: "Thanh toán hoá đơn vận chuyển",
+      assignee: "Nguyễn Đề Xuất",
+      fields: {
+        category: "Thanh toán",
+        amount: 25000000,
+        requester: "Nguyễn Đề Xuất",
+      },
+    }),
+  );
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assert.equal(created.body.status, "Chờ duyệt");
+
+  const chain = await request(`/requests/${created.body.id}/approval`);
+  assert.equal(chain.status, 200, JSON.stringify(chain.body));
+  assert.deepEqual(
+    chain.body.steps.map((step) => step.name),
+    ["Quản lý trực tiếp", "Kiểm soát tài chính"],
+  );
+  assert.deepEqual(
+    chain.body.steps.map((step) => step.status),
+    ["PENDING", "WAITING"],
+  );
+  assert.equal(chain.body.steps[0].slaHours, 8);
+  assert.equal(chain.body.steps[0].sla, "ON_TRACK");
+  assert.equal(chain.body.canDecide, true);
+  assert.equal(chain.body.canManage, true);
+
+  assert.equal(
+    (
+      await request(`/requests/${created.body.id}`, "PATCH", {
+        version: created.body.version,
+        status: "Đã duyệt",
+      })
+    ).status,
+    409,
+  );
+
+  const inbox = await request("/requests/inbox");
+  assert.equal(inbox.status, 200, JSON.stringify(inbox.body));
+  assert.ok(
+    inbox.body.items.some((item) => item.request.id === created.body.id),
+  );
+
+  const first = await request(`/requests/${created.body.id}/decision`, "POST", {
+    decision: "APPROVE",
+    note: "Đồng ý chi",
+    version: created.body.version,
+  });
+  assert.equal(first.status, 200, JSON.stringify(first.body));
+  assert.equal(first.body.request.status, "Chờ duyệt");
+  assert.deepEqual(
+    first.body.chain.steps.map((step) => step.status),
+    ["APPROVED", "PENDING"],
+  );
+  assert.equal(first.body.chain.canDecide, true);
+
+  assert.equal(
+    (
+      await request(`/requests/${created.body.id}/decision`, "POST", {
+        decision: "REJECT",
+        note: "",
+        version: first.body.request.version,
+      })
+    ).status,
+    422,
+  );
+
+  const second = await request(
+    `/requests/${created.body.id}/decision`,
+    "POST",
+    { decision: "APPROVE", note: "", version: first.body.request.version },
+  );
+  assert.equal(second.status, 200, JSON.stringify(second.body));
+  assert.equal(second.body.request.status, "Đã duyệt");
+  assert.equal(second.body.chain.activeStepId, null);
+
+  assert.equal(
+    (
+      await request(`/requests/${created.body.id}`, "PATCH", {
+        version: second.body.request.version,
+        name: "Đổi tên sau khi duyệt",
+      })
+    ).status,
+    409,
+  );
+});
+
+test("approval SLAs escalate once and only assigned people decide", async () => {
+  const created = await request(
+    "/requests",
+    "POST",
+    input("tickets-approvals", {
+      code: "REQ-MUA-01",
+      name: "Mua 20 màn hình",
+      assignee: "Nguyễn Đề Xuất",
+      fields: {
+        category: "Mua sắm",
+        amount: 40000000,
+        requester: "Nguyễn Đề Xuất",
+      },
+    }),
+  );
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const chain = (await request(`/requests/${created.body.id}/approval`)).body;
+  assert.deepEqual(
+    chain.steps.map((step) => step.name),
+    ["Quản lý trực tiếp", "Ban mua sắm"],
+  );
+
+  const moved = await request(`/requests/${created.body.id}/reassign`, "POST", {
+    approvers: ["Trần Duyệt"],
+    quorum: "ALL",
+    note: "Nhờ duyệt giúp",
+    version: created.body.version,
+  });
+  assert.equal(moved.status, 200, JSON.stringify(moved.body));
+  assert.equal(moved.body.chain.canDecide, false);
+  assert.equal(
+    moved.body.chain.steps[0].approvers[0].displayName,
+    "Trần Duyệt",
+  );
+  assert.match(moved.body.chain.steps[0].note, /Giao lại/);
+  assert.equal(
+    (
+      await request(`/requests/${created.body.id}/decision`, "POST", {
+        decision: "APPROVE",
+        note: "",
+        version: moved.body.request.version,
+      })
+    ).status,
+    403,
+  );
+
+  // Push the gate far into the past so the deadline is unambiguous even when the
+  // database clock and the API process clock drift apart.
+  const elapsed = await runSql(
+    `UPDATE "work_requests"."request_approval_steps"
+        SET "dueAt" = $2
+      WHERE "requestId" = $1 AND status = 'PENDING'`,
+    [created.body.id, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()],
+  );
+  assert.equal(elapsed.rowCount, 1);
+  const overdue = (await request(`/requests/${created.body.id}/approval`)).body;
+  assert.equal(overdue.steps[0].sla, "OVERDUE");
+  assert.ok(overdue.steps[0].escalatedAt);
+  assert.match(overdue.steps[0].note, /Quá hạn/);
+  const again = (await request(`/requests/${created.body.id}/approval`)).body;
+  assert.equal(again.steps[0].escalatedAt, overdue.steps[0].escalatedAt);
+
+  const selfDecided = await request(
+    `/requests/${created.body.id}/reassign`,
+    "POST",
+    {
+      approvers: [ADMIN.displayName],
+      quorum: "ANY",
+      version: moved.body.request.version,
+    },
+  );
+  assert.equal(selfDecided.status, 200, JSON.stringify(selfDecided.body));
+  assert.equal(selfDecided.body.chain.canDecide, true);
+
+  const cancelled = await request(
+    `/requests/${created.body.id}/cancel`,
+    "POST",
+    { reason: "Không còn nhu cầu", version: selfDecided.body.request.version },
+  );
+  assert.equal(cancelled.status, 200, JSON.stringify(cancelled.body));
+  assert.equal(cancelled.body.request.status, "Đã hủy");
+  assert.match(cancelled.body.request.note, /Không còn nhu cầu/);
+  assert.equal(
+    cancelled.body.chain.steps.every((step) => step.status !== "PENDING"),
+    true,
+  );
+
+  const own = await request(
+    "/requests",
+    "POST",
+    input("tickets-approvals", {
+      code: "REQ-OWN-01",
+      name: "Tự duyệt",
+      assignee: ADMIN.displayName,
+      fields: { category: "Khác", requester: ADMIN.displayName },
+    }),
+  );
+  assert.equal(own.status, 201, JSON.stringify(own.body));
+  const ownChain = (await request(`/requests/${own.body.id}/approval`)).body;
+  assert.equal(ownChain.canDecide, false);
+  assert.equal(
+    (
+      await request(`/requests/${own.body.id}/decision`, "POST", {
+        decision: "APPROVE",
+        note: "",
+        version: own.body.version,
+      })
+    ).status,
+    403,
+  );
+});
+
+test("leave requests feed approval history and the capacity workload", async () => {
+  const requestBody = {
+    employeeId: "EMP-01",
+    employeeName: ADMIN.displayName,
+    fromDate: "2026-11-09",
+    toDate: "2026-11-11",
+    reason: "Nghỉ phép năm cho việc gia đình",
+  };
+  const leave = await request("/leave-requests", "POST", requestBody);
+  assert.equal(leave.status, 201, JSON.stringify(leave.body));
+  assert.equal(leave.body.status, "PENDING");
+  assert.equal(leave.body.days, 3);
+  assert.equal(
+    (
+      await request("/leave-requests", "POST", {
+        ...requestBody,
+        fromDate: "2026-11-07",
+        toDate: "2026-11-08",
+      })
+    ).status,
+    422,
+  );
+  const queue = await request("/leaves/workflow/queue");
+  assert.equal(queue.status, 200, JSON.stringify(queue.body));
+  assert.equal(queue.body.length, 1);
+  assert.equal(queue.body[0].id, leave.body.id);
+
+  const employee = await request("/accounts", "POST", {
+    username: "nhan.vien.phep",
+    displayName: "Lê Nhân Viên",
+    employeeCode: "EMP-06",
+    actorName: "Hệ thống",
+    password: "mat-khau-09",
+  });
+  assert.equal(employee.status, 201, JSON.stringify(employee.body));
+  const adminCookie = cookie;
+  const employeeSignIn = await signIn("nhan.vien.phep", "mat-khau-09");
+  assert.equal(employeeSignIn.status, 200, JSON.stringify(employeeSignIn.body));
+  cookie = employeeSignIn.cookie;
+  assert.equal(
+    (
+      await request(
+        `/leaves/workflow/queue/${leave.body.id}/decision`,
+        "POST",
+        {
+          status: "APPROVED",
+        },
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (await request("/leave-requests", "POST", requestBody)).status,
+    403,
+  );
+  cookie = adminCookie;
+
+  const decision = await request(
+    `/leaves/workflow/queue/${leave.body.id}/decision`,
+    "POST",
+    { status: "APPROVED", note: "Đồng ý, bàn giao đủ việc" },
+  );
+  assert.equal(decision.status, 200, JSON.stringify(decision.body));
+  assert.equal(decision.body.request.status, "APPROVED");
+  assert.equal(decision.body.request.decidedBy, ADMIN.displayName);
+  assert.equal(decision.body.decision.status, "APPROVED");
+  assert.equal(decision.body.decision.requestId, leave.body.id);
+  assert.equal((await request("/leaves/workflow/queue")).body.length, 0);
+  const history = await request("/leave-approvals");
+  assert.equal(history.status, 200, JSON.stringify(history.body));
+  assert.equal(history.body.total, 1);
+  assert.equal(history.body.items[0].status, "APPROVED");
+  assert.equal(history.body.items[0].decidedBy, ADMIN.displayName);
+  assert.equal(
+    (
+      await request(
+        `/leaves/workflow/queue/${leave.body.id}/decision`,
+        "POST",
+        {
+          status: "REJECTED",
+        },
+      )
+    ).status,
+    409,
+  );
+
+  const period = await request("/resource-capacity/periods", "POST", {
+    employeeId: "EMP-01",
+    employeeName: ADMIN.displayName,
+    fromDate: "2026-11-02",
+    toDate: "2026-11-13",
+  });
+  assert.equal(period.status, 201, JSON.stringify(period.body));
+  assert.equal(period.body.workingDays, 10);
+  assert.equal(period.body.leaveDays, 0);
+  const allocation = await request("/resource-capacity/allocations", "POST", {
+    periodId: period.body.id,
+    projectRef: "OneOps",
+    percentage: 100,
+  });
+  assert.equal(allocation.status, 201, JSON.stringify(allocation.body));
+  assert.equal(allocation.body.employeeId, "EMP-01");
+
+  const workload = await request(`/workload/capacity/${period.body.id}`);
+  assert.equal(workload.status, 200, JSON.stringify(workload.body));
+  assert.equal(workload.body.summary.workingDays, 10);
+  assert.equal(workload.body.summary.leaveDays, 3);
+  assert.equal(workload.body.summary.availableHours, 56);
+  assert.equal(workload.body.summary.allocatedPercent, 100);
+  assert.equal(workload.body.summary.allocatedHours, 56);
+  assert.equal(workload.body.summary.remainingHours, 0);
+  assert.equal(workload.body.summary.overCapacity, false);
+
+  const manual = await request(
+    `/resource-capacity/periods/${period.body.id}/summary`,
+  );
+  assert.equal(manual.status, 200, JSON.stringify(manual.body));
+  assert.equal(manual.body.summary.leaveDays, 0);
+  assert.equal(manual.body.summary.availableHours, 80);
+
+  const extra = await request("/resource-capacity/allocations", "POST", {
+    periodId: period.body.id,
+    projectRef: "Nội bộ",
+    percentage: 60,
+  });
+  assert.equal(extra.status, 201, JSON.stringify(extra.body));
+  const overloaded = await request(`/workload/capacity/${period.body.id}`);
+  assert.equal(overloaded.body.summary.allocatedPercent, 160);
+  assert.equal(overloaded.body.summary.remainingHours, -33.6);
+  assert.equal(overloaded.body.summary.overCapacity, true);
+  const cancelled = await request(
+    `/resource-capacity/allocations/${extra.body.id}/cancel`,
+    "POST",
+    { version: 1 },
+  );
+  assert.equal(cancelled.status, 200, JSON.stringify(cancelled.body));
+  assert.equal(cancelled.body.status, "CANCELLED");
+  assert.equal(
+    (await request(`/workload/capacity/${period.body.id}`)).body.summary
+      .allocatedPercent,
+    100,
+  );
+});
+
+test("sprint planning ranks the backlog and gates the commitment against capacity", async () => {
+  const project = (await request("/projects", "POST", input("project-spaces")))
+    .body;
+  const points = [5, 8, 3];
+  const tasks = [];
+  for (const [index, value] of points.entries()) {
+    const task = (
+      await request(
+        "/tasks",
+        "POST",
+        input("tasks", {
+          code: "SPRINT-" + index,
+          name: "Việc sprint " + index,
+        }),
+      )
+    ).body;
+    tasks.push(task);
+    const added = await request(`/projects/${project.id}/items`, "POST", {
+      taskId: task.id,
+      points: value,
+    });
+    assert.equal(added.status, 201, JSON.stringify(added.body));
+    assert.equal(added.body.task.code, task.code);
+  }
+  assert.equal(
+    (
+      await request(`/projects/${project.id}/items`, "POST", {
+        taskId: tasks[0].id,
+        points: 1,
+      })
+    ).status,
+    409,
+  );
+
+  let board = (await request(`/projects/${project.id}/board`)).body;
+  assert.deepEqual(
+    board.backlog.map((item) => item.points),
+    points,
+  );
+  // Everything already planned leaves the planning picker.
+  assert.deepEqual(board.candidates, []);
+
+  const third = board.backlog[2];
+  const reordered = await request(
+    `/projects/${project.id}/items/${third.id}/move`,
+    "POST",
+    { sprintId: null, index: 0, version: third.version },
+  );
+  assert.equal(reordered.status, 201, JSON.stringify(reordered.body));
+  assert.deepEqual(
+    reordered.body.backlog.map((item) => item.points),
+    [3, 5, 8],
+  );
+
+  const sprint = (
+    await request(`/projects/${project.id}/sprints`, "POST", {
+      name: "Sprint 1",
+      goal: "Ra mắt bản beta",
+      startDate: "2026-11-02",
+      endDate: "2026-11-13",
+      capacity: 14,
+    })
+  ).body;
+  assert.equal(sprint.status, "PLANNED");
+  assert.equal(sprint.commitment.state, "EMPTY");
+  assert.equal(
+    (
+      await request(`/projects/${project.id}/sprints`, "POST", {
+        name: "Sprint 1",
+        startDate: "2026-11-02",
+        endDate: "2026-11-13",
+      })
+    ).status,
+    409,
+  );
+
+  for (const [index, item] of reordered.body.backlog.entries()) {
+    const moved = await request(
+      `/projects/${project.id}/items/${item.id}/move`,
+      "POST",
+      { sprintId: sprint.id, index, version: item.version },
+    );
+    assert.equal(moved.status, 201, JSON.stringify(moved.body));
+  }
+  board = (await request(`/projects/${project.id}/board`)).body;
+  const planned = board.sprints[0];
+  assert.equal(planned.plannedPoints, 16);
+  assert.equal(planned.commitment.capacity, 14);
+  assert.equal(planned.commitment.overBy, 2);
+  assert.equal(planned.commitment.state, "OVER");
+  assert.deepEqual(board.backlog, []);
+
+  // Above capacity needs the manager's explicit confirmation.
+  assert.equal(
+    (
+      await request(
+        `/projects/${project.id}/sprints/${sprint.id}/activate`,
+        "POST",
+        {
+          version: planned.version,
+        },
+      )
+    ).status,
+    422,
+  );
+  const active = await request(
+    `/projects/${project.id}/sprints/${sprint.id}/activate`,
+    "POST",
+    { version: planned.version, overCapacity: true },
+  );
+  assert.equal(active.status, 201, JSON.stringify(active.body));
+  assert.equal(active.body.status, "ACTIVE");
+  assert.equal(active.body.committed, 16);
+  assert.ok(active.body.activatedAt);
+
+  // An empty sprint cannot start, and only one sprint runs at a time.
+  const second = (
+    await request(`/projects/${project.id}/sprints`, "POST", {
+      name: "Sprint 2",
+      startDate: "2026-11-16",
+      endDate: "2026-11-27",
+      capacity: 20,
+    })
+  ).body;
+  assert.equal(
+    (
+      await request(
+        `/projects/${project.id}/sprints/${second.id}/activate`,
+        "POST",
+        {
+          version: second.version,
+        },
+      )
+    ).status,
+    422,
+  );
+
+  // Planning keeps moving while a sprint runs, but starting a second one waits.
+  board = (await request(`/projects/${project.id}/board`)).body;
+  const running = board.sprints.find((item) => item.id === sprint.id);
+  assert.equal(running.items.length, 3);
+  assert.equal(running.doneCount, 0);
+  const parked = running.items[0];
+  const sent = await request(
+    `/projects/${project.id}/items/${parked.id}/move`,
+    "POST",
+    { sprintId: second.id, index: 0, version: parked.version },
+  );
+  assert.equal(sent.status, 201, JSON.stringify(sent.body));
+  assert.equal(
+    (
+      await request(
+        `/projects/${project.id}/sprints/${second.id}/activate`,
+        "POST",
+        {
+          version: second.version,
+        },
+      )
+    ).status,
+    409,
+  );
+
+  const waiting = sent.body.sprints.find((item) => item.id === second.id);
+  assert.equal(waiting.plannedPoints, parked.points);
+  const back = await request(
+    `/projects/${project.id}/items/${waiting.items[0].id}/move`,
+    "POST",
+    {
+      sprintId: sprint.id,
+      index: 0,
+      version: waiting.items[0].version,
+    },
+  );
+  assert.equal(back.status, 201, JSON.stringify(back.body));
+  const restored = back.body.sprints.find((item) => item.id === sprint.id);
+  assert.equal(restored.plannedPoints, 16);
+  assert.equal(restored.committedOnPlan, true);
+});
+
+test("closing a sprint carries unfinished work forward and records velocity", async () => {
+  const project = (await request("/projects", "POST", input("project-spaces")))
+    .body;
+  const points = [5, 8, 3];
+  const tasks = [];
+  const items = [];
+  for (const [index, value] of points.entries()) {
+    const task = (
+      await request(
+        "/tasks",
+        "POST",
+        input("tasks", {
+          code: "CARRY-" + index,
+          name: "Việc chuyển tiếp " + index,
+        }),
+      )
+    ).body;
+    tasks.push(task);
+    items.push(
+      (
+        await request(`/projects/${project.id}/items`, "POST", {
+          taskId: task.id,
+          points: value,
+        })
+      ).body,
+    );
+  }
+  const sprint = (
+    await request(`/projects/${project.id}/sprints`, "POST", {
+      name: "Sprint 1",
+      startDate: "2026-11-02",
+      endDate: "2026-11-13",
+      capacity: 20,
+    })
+  ).body;
+  for (const [index, item] of items.entries()) {
+    const moved = await request(
+      `/projects/${project.id}/items/${item.id}/move`,
+      "POST",
+      { sprintId: sprint.id, index, version: item.version },
+    );
+    assert.equal(moved.status, 201, JSON.stringify(moved.body));
+  }
+  let board = (await request(`/projects/${project.id}/board`)).body;
+  const planned = board.sprints.find((item) => item.id === sprint.id);
+  const started = await request(
+    `/projects/${project.id}/sprints/${sprint.id}/activate`,
+    "POST",
+    { version: planned.version },
+  );
+  assert.equal(started.status, 201, JSON.stringify(started.body));
+  assert.equal(started.body.committed, 16);
+
+  await completeTask(tasks[0]);
+  await completeTask(tasks[1]);
+  board = (await request(`/projects/${project.id}/board`)).body;
+  const running = board.sprints.find((item) => item.id === sprint.id);
+  assert.equal(running.doneCount, 2);
+  assert.equal(running.donePoints, 13);
+  assert.equal(running.remainingPoints, 3);
+
+  const next = (
+    await request(`/projects/${project.id}/sprints`, "POST", {
+      name: "Sprint 2",
+      startDate: "2026-11-16",
+      endDate: "2026-11-27",
+      capacity: 20,
+    })
+  ).body;
+  const closed = await request(
+    `/projects/${project.id}/sprints/${sprint.id}/close`,
+    "POST",
+    { version: running.version, nextSprintId: next.id },
+  );
+  assert.equal(closed.status, 201, JSON.stringify(closed.body));
+  const snapshot = closed.body.sprints.find((item) => item.id === sprint.id);
+  assert.equal(snapshot.status, "CLOSED");
+  assert.equal(snapshot.completed, 13);
+  assert.equal(snapshot.carried, 3);
+  assert.match(snapshot.note, /Đóng sprint/);
+  const upcoming = closed.body.sprints.find((item) => item.id === next.id);
+  assert.equal(upcoming.plannedPoints, 3);
+
+  const metrics = (await request(`/projects/${project.id}/metrics`)).body;
+  assert.equal(metrics.velocity.length, 1);
+  assert.equal(metrics.velocity[0].completed, 13);
+  assert.equal(metrics.velocity[0].carried, 3);
+  assert.equal(metrics.averageVelocity, 13);
+  assert.equal(metrics.active, null);
+
+  // A closed sprint is history: no new rows, no edits, no deletes.
+  const done = snapshot.items[0];
+  assert.equal(
+    (
+      await request(`/projects/${project.id}/items/${done.id}/move`, "POST", {
+        sprintId: upcoming.id,
+        index: 0,
+        version: done.version,
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`/projects/${project.id}/items/${done.id}`, "PATCH", {
+        points: 9,
+        version: done.version,
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`/projects/${project.id}/sprints/${sprint.id}`, "PATCH", {
+        note: "Sửa sau khi đóng",
+        version: snapshot.version,
+      })
+    ).status,
+    409,
+  );
+});
+test("automation rules match task changes, dry run first and log every run", async () => {
+  const runsOf = async (ruleId) =>
+    (await request(`/automation/runs?ruleId=${ruleId}`)).body.items;
+
+  const created = await request("/automation/rules", "POST", {
+    name: "Chuyển kiểm tra tự động",
+    description: "Giao người kiểm tra ngay khi công việc sang Chờ kiểm tra",
+    trigger: "updated",
+    condition: [
+      { field: "status", operator: "changedTo", value: "Chờ kiểm tra" },
+    ],
+    actions: [
+      { kind: "comment", body: "Công việc {{code}} đã sẵn sàng kiểm tra." },
+      { kind: "assign", assignee: "bao.tran" },
+      {
+        kind: "notify",
+        recipients: "{{assignee}}, quan.ly",
+        title: "Cần kiểm tra {{code}}",
+        body: "{{name}} vừa chuyển sang Chờ kiểm tra.",
+      },
+    ],
+    lockSeconds: 5,
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const rule = created.body;
+  assert.equal(rule.version, 1);
+  assert.equal(rule.condition.length, 1);
+  assert.equal(rule.runCount, 0);
+
+  // A rule that reacts to the assignee the automation itself sets must not
+  // fire from the automation's own write: the applied rule locks the task.
+  const chained = (
+    await request("/automation/rules", "POST", {
+      name: "Theo dõi người được giao",
+      condition: [
+        { field: "assignee", operator: "changedTo", value: "bao.tran" },
+      ],
+      actions: [{ kind: "comment", body: "Đã giao cho {{assignee}}." }],
+      position: 20,
+      lockSeconds: 5,
+    })
+  ).body;
+
+  // Names stay unique and a stale version never overwrites a newer rule.
+  assert.equal(
+    (
+      await request("/automation/rules", "POST", {
+        name: "Chuyển kiểm tra tự động",
+        actions: [{ kind: "status", status: "Đang làm" }],
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`/automation/rules/${rule.id}`, "PATCH", {
+        position: 30,
+        version: 9,
+      })
+    ).status,
+    409,
+  );
+
+  // The dry run compiles the actions for a made up snapshot without writing.
+  const dry = await request("/automation/simulate", "POST", {
+    trigger: "updated",
+    values: {
+      code: "CV-104",
+      name: "Hoàn thiện báo giá",
+      status: "Chờ kiểm tra",
+      assignee: "lan.nguyen",
+      reviewer: "",
+      scope: "Nội bộ",
+      date: "",
+    },
+    changed: ["status"],
+  });
+  assert.equal(dry.status, 200, JSON.stringify(dry.body));
+  assert.equal(dry.body.matched, 1);
+  const preview = dry.body.results.find((item) => item.ruleId === rule.id);
+  assert.equal(preview.matched, true);
+  assert.deepEqual(preview.actions, [
+    { kind: "comment", body: "Công việc CV-104 đã sẵn sàng kiểm tra." },
+    { kind: "assign", assignee: "bao.tran" },
+    {
+      kind: "notify",
+      recipients: ["lan.nguyen", "quan.ly"],
+      title: "Cần kiểm tra CV-104",
+      body: "Hoàn thiện báo giá vừa chuyển sang Chờ kiểm tra.",
+    },
+  ]);
+  // A field that did not change cannot satisfy `changedTo`.
+  const untouched = await request("/automation/simulate", "POST", {
+    trigger: "updated",
+    values: { status: "Chờ kiểm tra", assignee: "lan.nguyen" },
+  });
+  assert.equal(untouched.body.matched, 0);
+  assert.equal((await request("/automation/runs")).body.items.length, 0);
+
+  // A real transition publishes the snapshot the engine evaluates. Nobody owns
+  // the task yet, so the manager may act on it like the assignee would.
+  const task = (
+    await request("/tasks", "POST", input("tasks", { code: "AUTO-01" }))
+  ).body;
+  const started = await transition(task, "Đang làm");
+  await transition(started, "Chờ kiểm tra");
+
+  const [run] = await waitFor(
+    () => runsOf(rule.id),
+    (items) => items.length > 0,
+  );
+  assert.equal(run.outcome, "APPLIED");
+  assert.equal(run.trigger, "updated");
+  assert.equal(run.code, task.code);
+  assert.equal(run.ruleName, rule.name);
+  assert.equal(run.actions.length, 3);
+
+  // Every action reached the owning feature through its public service.
+  const assigned = await waitFor(
+    () => request("/tasks/" + task.id),
+    (result) => result.body.assignee === "bao.tran",
+  );
+  assert.equal(assigned.body.status, "Chờ kiểm tra");
+  const trail = (
+    await waitFor(
+      () => request(`/task-comments?taskId=${task.id}`),
+      (result) =>
+        result.body.items.some((item) => item.author === "Tự động hóa"),
+    )
+  ).body.items;
+  assert.equal(
+    trail.find((item) => item.author === "Tự động hóa").body,
+    `Công việc ${task.code} đã sẵn sàng kiểm tra.`,
+  );
+  const inbox = (
+    await waitFor(
+      () =>
+        request(`/notifications?recipient=${encodeURIComponent("quan.ly")}`),
+      (result) =>
+        result.body.items.some(
+          (item) => item.title === `Cần kiểm tra ${task.code}`,
+        ),
+    )
+  ).body.items;
+  assert.equal(
+    inbox.find((item) => item.title === `Cần kiểm tra ${task.code}`).link,
+    `/work-management/tasks?focus=${task.id}`,
+  );
+
+  // The rule that watched the new assignee stayed out of the automation write.
+  assert.deepEqual(await runsOf(chained.id), []);
+  const touched = await waitFor(
+    async () => (await request("/automation/rules")).body,
+    (page) => page.applied === 1,
+  );
+  assert.equal(touched.items.find((item) => item.id === rule.id).runCount, 1);
+  assert.ok(touched.items.find((item) => item.id === rule.id).lastRunAt);
+  assert.equal(touched.skipped, 0);
+
+  // A disabled rule is skipped until someone turns it back on.
+  const paused = (
+    await request("/automation/rules", "POST", {
+      name: "Tạm dừng theo dõi",
+      condition: [
+        { field: "status", operator: "changedTo", value: "Hoãn lại" },
+      ],
+      actions: [{ kind: "comment", body: "Đã tạm dừng {{code}}." }],
+      enabled: false,
+      position: 5,
+    })
+  ).body;
+  const parked = (
+    await request("/tasks", "POST", input("tasks", { code: "AUTO-02" }))
+  ).body;
+  await transition(parked, "Hoãn lại", { reason: "Khách hàng tạm dừng" });
+  await sleep(200);
+  assert.deepEqual(await runsOf(paused.id), []);
+
+  const enabled = await request(
+    `/automation/rules/${paused.id}/toggle`,
+    "PATCH",
+    {
+      enabled: true,
+      version: paused.version,
+    },
+  );
+  assert.equal(enabled.status, 200, JSON.stringify(enabled.body));
+  assert.equal(enabled.body.enabled, true);
+  const later = (
+    await request("/tasks", "POST", input("tasks", { code: "AUTO-03" }))
+  ).body;
+  await transition(later, "Hoãn lại", { reason: "Khách hàng tạm dừng" });
+  const pausedRun = await waitFor(
+    () => runsOf(paused.id),
+    (items) => items.length > 0,
+  );
+  assert.equal(pausedRun[0].actions[0].body, `Đã tạm dừng ${later.code}.`);
+
+  // Deleting needs the current version; the log keeps the history.
+  assert.equal(
+    (await request(`/automation/rules/${paused.id}?version=1`, "DELETE"))
+      .status,
+    409,
+  );
+  const removed = await request(
+    `/automation/rules/${paused.id}?version=${enabled.body.version}`,
+    "DELETE",
+  );
+  assert.equal(removed.status, 200, JSON.stringify(removed.body));
+  assert.deepEqual(removed.body, { id: paused.id });
+  assert.equal(
+    (await request("/automation/rules")).body.items.some(
+      (item) => item.id === paused.id,
+    ),
+    false,
+  );
+  assert.equal((await runsOf(paused.id)).length, 1);
+
+  // The engine is a system actor, not a free pass: it cannot skip a step the
+  // state machine does not declare, so the late task keeps its status.
+  const direct = (
+    await request("/automation/rules", "POST", {
+      name: "Đóng công việc ngay",
+      condition: [{ field: "code", operator: "is", value: "AUTO-09" }],
+      actions: [{ kind: "status", status: "Hoàn thành" }],
+      position: 1,
+    })
+  ).body;
+  const late = (
+    await request("/tasks", "POST", input("tasks", { code: "AUTO-09" }))
+  ).body;
+  await sleep(200);
+  assert.equal((await runsOf(direct.id)).length, 0);
+  await request(`/tasks/${late.id}`, "PATCH", {
+    name: "Đổi tên để kích hoạt",
+    version: late.version,
+  });
+  await waitFor(
+    () => runsOf(direct.id),
+    (items) => items.length > 0,
+  );
+  await sleep(200);
+  assert.equal((await request(`/tasks/${late.id}`)).body.status, "Cần làm");
 });

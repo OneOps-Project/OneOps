@@ -123,6 +123,18 @@ Catalog event khởi tạo:
 
 Bổ sung event mới phải cập nhật bảng này và test contract trước khi dùng.
 
+### 5.1. Bus tự động hóa (`core/events/workflow-events.ts`)
+
+Vì feature lá không được import feature khác và composition không vượt qua module chính, tự động hóa nối qua bus hạ tầng thay vì gọi chéo:
+
+- Chủ sở hữu dữ liệu công bố `WorkflowSnapshot` (`entity`, `id`, `code`, `name`, `status`, `assignee`, `reviewer`, `scope`, `date`, `previous`) sau mỗi lần tạo hoặc cập nhật; `previous` chỉ chứa trường thực sự đổi.
+- `tenant-system/automation-hub/workflow-rules` sở hữu quy tắc: đánh giá các quy tắc đang bật theo `position`, ghép điều kiện bằng AND, rồi công bố `WorkflowAction` (`assign`, `status`, `comment`, `notify`).
+- Feature sở hữu bản ghi đăng ký bộ áp dụng (`work-management/automation.actions.ts`) và chỉ ghi qua public service của chính nó.
+- Hành động `status` vẫn phải đi qua một cạnh hợp lệ của `TRANSITIONS` và cổng deadline; cạnh không hợp lệ bị từ chối, không có đường tắt cho tự động hóa.
+- Khóa theo `entityId` trong `lockSeconds` chặn vòng lặp do chính tự động hóa gây ra.
+- `AutomationRun` lưu từng lượt (`APPLIED` / `SKIPPED` / `FAILED`) và không bị xóa theo quy tắc: xóa quy tắc không xóa lịch sử đã tác động lên bản ghi.
+- `POST /automation/simulate` chạy thử trên snapshot giả lập và không ghi lượt chạy.
+
 ## 6. Migration contract
 
 - Mọi thay đổi model theo bốn bước: expand → backfill → verify → contract.

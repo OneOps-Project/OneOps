@@ -28,19 +28,26 @@ import {
   type TransitionRequest,
 } from "@/features/work-management/work/tasks/components/task-actions";
 import { TaskProposals } from "@/features/work-management/work/tasks/components/task-proposals";
+import { TaskLinks } from "@/features/work-management/work/tasks/components/task-links";
 import { TaskHistory } from "@/features/work-management/work/tasks/components/task-history";
 import styles from "@/features/work-management/work/tasks/components/styles.module.css";
 
 export function TaskDetail({
   task,
+  candidates,
   onClose,
   onEdit,
   onDelete,
+  onChanged,
 }: {
   task: RecordDto;
+  /** Other tasks of the workspace, offered when adding a link. */
+  candidates: readonly RecordDto[];
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  /** Lets the board refresh its blocker counts after any write here. */
+  onChanged?: () => void;
 }) {
   const { notify } = useWorkspace();
   const { data, loading, error, reload, apply } = useTaskState(task.id);
@@ -63,6 +70,7 @@ export function TaskDetail({
       });
       apply(next);
       recordsChanged();
+      onChanged?.();
       notify(`Đã chuyển sang “${input.to}”.`);
     } catch (cause) {
       // Only the API explains itself; anything else is an unreadable payload.
@@ -264,6 +272,8 @@ export function TaskDetail({
             {actionError}
           </p>
         )}
+
+        <TaskLinks task={task} candidates={candidates} onChanged={onChanged} />
 
         <section aria-label="Đầu việc">
           <h3 className="text-sm font-semibold">

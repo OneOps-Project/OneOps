@@ -21,6 +21,7 @@ import {
   recordsChanged,
 } from "@/features/work-management/work/tasks/hooks/use-records";
 import { useAllowed } from "@/features/work-management/work/tasks/hooks/use-allowed";
+import { useBlockers } from "@/features/work-management/work/tasks/hooks/use-blockers";
 import {
   Modal,
   useWorkspace,
@@ -59,6 +60,7 @@ export function ModulePage({
   const { openCreate, notify } = useWorkspace();
   const { records, loading, error, reload } = useModuleRecords();
   const allowed = useAllowed(records.map((record) => record.id));
+  const blockers = useBlockers(records.map((record) => record.id));
   const [query, setQuery] = useState(params.get("q") || "");
   const [status, setStatus] = useState("");
   const [view, setView] = useState<"list" | "board">(initialView);
@@ -105,6 +107,7 @@ export function ModulePage({
       project: record.fields.project,
       available: (entry?.allowed ?? []).map((move) => move.to),
       locked: Boolean(entry?.pendingProposal),
+      blocked: blockers.map.get(record.id)?.open ?? 0,
     };
   });
 
@@ -132,6 +135,7 @@ export function ModulePage({
       });
       recordsChanged();
       allowed.reload();
+      blockers.reload();
       notify(`Đã chuyển “${record.code}” sang ${to}.`);
     } catch (cause) {
       setActionError(
@@ -182,21 +186,22 @@ export function ModulePage({
     <div className={styles.root}>
       <div className="module-view">
         <section className="records-panel">
-          <div className={styles.header}>
+          <header className="page-header">
             <div>
+              <span className="eyebrow">Công việc · Quy trình</span>
               <h1>{definition.title}</h1>
               <p>
                 Phân công rõ ràng, chuyển trạng thái theo quy trình và lưu lại
                 lịch sử xử lý.
               </p>
             </div>
-            <div className={styles.actions}>
+            <div className="page-actions">
               <Button variant="secondary" onClick={exportCsv}>
                 Xuất CSV
               </Button>
               <Button onClick={openCreate}>Tạo mới</Button>
             </div>
-          </div>
+          </header>
 
           <div className={styles.toolbar}>
             <Input
@@ -215,28 +220,42 @@ export function ModulePage({
                 <option key={value}>{value}</option>
               ))}
             </Select>
-            <div className="flex gap-2" role="group" aria-label="Kiểu hiển thị">
-              <Button
-                variant={view === "board" ? "primary" : "secondary"}
-                aria-pressed={view === "board"}
-                onClick={() => setView("board")}
+            <div className={styles.toolbarRight}>
+              <div
+                className="flex gap-2"
+                role="group"
+                aria-label="Kiểu hiển thị"
               >
-                Bảng
-              </Button>
+                <Button
+                  variant={view === "board" ? "primary" : "secondary"}
+                  aria-pressed={view === "board"}
+                  onClick={() => setView("board")}
+                >
+                  Bảng
+                </Button>
+                <Button
+                  variant={view === "list" ? "primary" : "secondary"}
+                  aria-pressed={view === "list"}
+                  onClick={() => setView("list")}
+                >
+                  Danh sách
+                </Button>
+              </div>
               <Button
-                variant={view === "list" ? "primary" : "secondary"}
-                aria-pressed={view === "list"}
-                onClick={() => setView("list")}
+                variant="ghost"
+                loading={loading}
+                onClick={() => {
+                  reload();
+                  allowed.reload();
+                  blockers.reload();
+                }}
               >
-                Danh sách
+                Làm mới
               </Button>
+              <span className="text-sm text-muted-foreground">
+                {filtered.length} mục
+              </span>
             </div>
-            <Button variant="ghost" onClick={reload} loading={loading}>
-              Làm mới
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {filtered.length} mục
-            </span>
           </div>
 
           <div className={styles.stats}>
@@ -270,7 +289,7 @@ export function ModulePage({
           {loading ? (
             <p role="status">Đang tải dữ liệu…</p>
           ) : !filtered.length ? (
-            <div className={styles.empty}>
+            <div className="surface empty-state">
               <h2>Chưa có {definition.singular} phù hợp</h2>
               <p>Tạo nội dung đầu tiên hoặc thay đổi điều kiện tìm kiếm.</p>
               <Button onClick={openCreate}>Tạo mới</Button>
@@ -311,9 +330,16 @@ export function ModulePage({
                         </button>
                       </td>
                       <td>
-                        <Badge variant={statusTone[record.status]} dot>
-                          {record.status}
-                        </Badge>
+                        <span className={styles.actions}>
+                          <Badge variant={statusTone[record.status]} dot>
+                            {record.status}
+                          </Badge>
+                          {Boolean(blockers.map.get(record.id)?.open) && (
+                            <Badge variant="warning">
+                              Chờ {blockers.map.get(record.id)?.open} việc
+                            </Badge>
+                          )}
+                        </span>
                       </td>
                       <td
                         className={
@@ -357,6 +383,11 @@ export function ModulePage({
         <TaskDetail
           key={detail.id}
           task={detail}
+          candidates={records.filter((record) => record.id !== detail.id)}
+          onChanged={() => {
+            allowed.reload();
+            blockers.reload();
+          }}
           onClose={() => setFocusId(null)}
           onEdit={() => {
             setEditingId(detail.id);

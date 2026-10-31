@@ -1,9 +1,7 @@
 import { Module, Injectable, Controller, Get } from "@nestjs/common";
 import { TasksModule, TasksService } from "./work/tasks/index.js";
-import {
-  ProjectSpacesModule,
-  ProjectSpacesService,
-} from "./projects/project-spaces/index.js";
+import { ProjectSpacesService } from "./projects/project-spaces/index.js";
+import { projectSpacesModule } from "./work-management.composition.js";
 import {
   TicketsApprovalsModule,
   TicketsApprovalsService,
@@ -95,7 +93,7 @@ class WorkspaceInsightsController {
 @Module({
   imports: [
     TasksModule,
-    ProjectSpacesModule,
+    projectSpacesModule,
     TicketsApprovalsModule,
     CalendarModule,
   ],

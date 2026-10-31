@@ -1,0 +1,39 @@
+model CapacityPeriod {
+  id                  String   @id @default(uuid()) @db.Uuid
+  employeeId          String   @db.VarChar(64)
+  employeeName        String   @db.VarChar(200)
+  fromDate            String   @db.VarChar(10)
+  toDate              String   @db.VarChar(10)
+  standardHoursPerDay Float    @default(8)
+  workingDays         Int      @default(0)
+  holidayDays         Float    @default(0)
+  leaveDays           Float    @default(0)
+  note                String   @default("") @db.VarChar(500)
+  version             Int      @default(1)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([employeeId, fromDate, toDate])
+  @@index([fromDate, toDate])
+  @@map("capacity_periods")
+  @@schema("hr_capacity")
+}
+
+model ProjectAllocation {
+  id           String   @id @default(uuid()) @db.Uuid
+  periodId     String   @db.Uuid
+  employeeId   String   @db.VarChar(64)
+  employeeName String   @db.VarChar(200)
+  projectRef   String   @db.VarChar(200)
+  percentage   Float    @default(0)
+  status       String   @default("PLANNED") @db.VarChar(20)
+  note         String   @default("") @db.VarChar(500)
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([periodId, status])
+  @@index([employeeId])
+  @@map("project_allocations")
+  @@schema("hr_capacity")
+}

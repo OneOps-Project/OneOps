@@ -1,7 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import type { RecordDto } from "@/features/work-management/coordination/tickets-approvals/types";
+import type {
+  InboxEntry,
+  RecordDto,
+} from "@/features/work-management/coordination/tickets-approvals/types";
 import { definition } from "@/features/work-management/coordination/tickets-approvals/constants";
 import { client } from "@/features/work-management/coordination/tickets-approvals/api/client";
 import {
@@ -19,6 +22,7 @@ import {
 } from "@/features/work-management/coordination/tickets-approvals/components/primitives/forms";
 import { Badge } from "@/features/work-management/coordination/tickets-approvals/components/primitives/foundations";
 import { RecordForm } from "@/features/work-management/coordination/tickets-approvals/components/record-form";
+import { ApprovalPanel } from "@/features/work-management/coordination/tickets-approvals/components/approval-panel";
 import styles from "@/features/work-management/coordination/tickets-approvals/components/styles.module.css";
 
 export function ModulePage() {
@@ -33,8 +37,33 @@ export function ModulePage() {
     [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState("");
   const [view, setView] = useState("list");
+  const [inbox, setInbox] = useState<{ items: InboxEntry[]; key: string }>({
+    items: [],
+    key: "",
+  });
+  const [inboxRevision, setInboxRevision] = useState(0);
   const effectiveStatus =
     status === "all" ? "" : status || params.get("status") || "";
+  // The inbox is a server filter: only gates the current actor may decide.
+  const inboxKey = view === "inbox" ? `inbox:${inboxRevision}` : "";
+  useEffect(() => {
+    if (!inboxKey) return;
+    const controller = new AbortController();
+    client
+      .inbox(controller.signal)
+      .then((page) => setInbox({ items: page.items, key: inboxKey }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setActionError(
+          cause instanceof Error
+            ? cause.message
+            : "Không tải được hộp chờ duyệt.",
+        );
+      });
+    return () => controller.abort();
+  }, [inboxKey]);
+  const inboxLoading = Boolean(inboxKey) && inbox.key !== inboxKey;
+  const inboxItems = inbox.key === inboxKey ? inbox.items : [];
   const filtered = records.filter(
     (record) =>
       (!effectiveStatus || record.status === effectiveStatus) &&
@@ -42,26 +71,6 @@ export function ModulePage() {
         .toLocaleLowerCase("vi")
         .includes(query.trim().toLocaleLowerCase("vi")),
   );
-  async function update(
-    record: RecordDto,
-    patch: Parameters<typeof client.update>[1],
-  ) {
-    if (pending) return false;
-    setPending(true);
-    setActionError("");
-    try {
-      const next = await client.update(record, patch);
-      setDetail((current) => (current?.id === next.id ? next : current));
-      recordsChanged();
-      notify("Đã cập nhật thành công.");
-      return true;
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Không thể cập nhật");
-      return false;
-    } finally {
-      setPending(false);
-    }
-  }
   function exportCsv() {
     const cell = (value: string) =>
       '"' +
@@ -136,6 +145,12 @@ export function ModulePage() {
             >
               Thẻ
             </Button>
+            <Button
+              variant={view === "inbox" ? "primary" : "secondary"}
+              onClick={() => setView("inbox")}
+            >
+              Chờ tôi duyệt
+            </Button>
             <span className="text-sm text-muted-foreground">
               {filtered.length} mục
             </span>
@@ -148,7 +163,67 @@ export function ModulePage() {
               </Button>
             </div>
           )}
-          {loading ? (
+          {view === "inbox" ? (
+            <>
+              <div className={styles.actions}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setInboxRevision((value) => value + 1)}
+                >
+                  Làm mới
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {inboxItems.length} bước chờ bạn
+                </span>
+              </div>
+              {inboxLoading ? (
+                <p role="status">Đang tải hộp chờ duyệt…</p>
+              ) : !inboxItems.length ? (
+                <div className={styles.empty}>
+                  <h2>Không có đề xuất nào chờ bạn</h2>
+                  <p>Mọi bước bạn phụ trách đã được xử lý.</p>
+                </div>
+              ) : (
+                <ul className={styles.chain}>
+                  {inboxItems.map((entry) => (
+                    <li key={entry.step.id} className={styles.step}>
+                      <div className={styles.stepHead}>
+                        <div className={styles.stepTitle}>
+                          <strong>
+                            {entry.request.code} · {entry.request.name}
+                          </strong>
+                          <span className="text-sm text-muted-foreground">
+                            {entry.step.name} · SLA {entry.step.slaHours} giờ
+                          </span>
+                        </div>
+                        <Badge
+                          variant={
+                            entry.step.sla === "OVERDUE"
+                              ? "danger"
+                              : entry.step.sla === "DUE_SOON"
+                                ? "warning"
+                                : "neutral"
+                          }
+                        >
+                          {entry.step.remainingMinutes <= 0
+                            ? "Quá hạn"
+                            : `Còn ${Math.ceil(entry.step.remainingMinutes / 60)} giờ`}
+                        </Badge>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setDetail(entry.request)}
+                        >
+                          Mở
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : loading ? (
             <p role="status">Đang tải dữ liệu…</p>
           ) : !filtered.length ? (
             <div className={styles.empty}>
@@ -184,20 +259,7 @@ export function ModulePage() {
                             </button>
                           </td>
                           <td>
-                            <Select
-                              aria-label={"Trạng thái " + record.code}
-                              disabled={pending}
-                              value={record.status}
-                              onChange={(e) =>
-                                void update(record, {
-                                  status: e.target.value as RecordDto["status"],
-                                })
-                              }
-                            >
-                              {definition.statuses.map((s) => (
-                                <option key={s}>{s}</option>
-                              ))}
-                            </Select>
+                            <Badge>{record.status}</Badge>
                           </td>
                           <td>{record.date}</td>
                           <td>{record.assignee || "Chưa phân công"}</td>
@@ -293,6 +355,14 @@ export function ModulePage() {
                   {String(value)}
                 </p>
               ))}
+            <ApprovalPanel
+              request={detail}
+              onChanged={(next) => {
+                setDetail(next);
+                // Deciding a step changes the actor's inbox, so refetch it.
+                setInboxRevision((value) => value + 1);
+              }}
+            />
           </div>
           <footer>
             <Button
@@ -340,6 +410,7 @@ export function ModulePage() {
                 try {
                   await client.remove(deleting);
                   recordsChanged();
+                  setInboxRevision((value) => value + 1);
                   setDeleting(null);
                   notify("Đã xóa thành công.");
                 } catch (e) {

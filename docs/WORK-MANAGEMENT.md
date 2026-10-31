@@ -45,11 +45,24 @@ Phân hệ Work Management của OneOps là nền tảng quản lý công việc
 10. **Trung tâm thông báo thời gian thực (`notifications`):**
     - Kênh sự kiện Server-Sent Events (SSE) tại `/api/v1/work/notifications/stream` đẩy thông báo tức thì khi có việc mới được giao, cập nhật trạng thái, tin nhắn hoặc lịch họp.
     - Cơ chế **Xóa mềm (Soft Delete `deletedAt`)**: Thao tác xóa trên giao diện sẽ ẩn thông báo khỏi người dùng và cập nhật lại bộ đếm unread badge, trong khi bản ghi trong database vẫn được lưu trọn vẹn để bảo toàn kiểm toán.
+11. **Liên kết công việc & cổng chặn khởi động (`task-links`):**
+    - Liên kết có kiểu (chặn, liên quan, trùng lặp, phụ thuộc) giữa hai công việc; hệ thống tự phát hiện chu trình và chống trùng cặp liên kết.
+    - Công việc còn liên kết chặn đang mở thì không thể bắt đầu; Quản lý chỉ được vượt cổng khi nhập lý do và lý do được lưu vào lịch sử workflow.
+12. **Phê duyệt theo thứ tự & cam kết SLA (`tickets-approvals`):**
+    - Phiếu yêu cầu chạy theo chuỗi bước duyệt có thứ tự, gom nhóm song song, ngưỡng số người đồng ý (quorum) và trả về người đề xuất khi bị từ chối.
+    - Đồng hồ SLA theo từng bước, tự động leo thang cho cấp trên khi quá hạn; hộp thư “bước chờ tôi duyệt” gom toàn bộ việc cần quyết định.
+13. **Sprint & Backlog (`project-spaces`):**
+    - Xếp hạng backlog bằng rank thưa, ước lượng story point, cam kết sprint so với năng lực (cảnh báo vượt và cần Quản lý xác nhận).
+    - Chỉ một sprint hoạt động tại một thời điểm; đóng sprint chuyển việc dở dang sang sprint kế tiếp và ghi nhận vận tốc.
+14. **Quy tắc tự động (`tenant-system/automation-hub/workflow-rules`):**
+    - Quy tắc theo sự kiện công việc với điều kiện AND và hành động giao việc/chuyển trạng thái/bình luận/thông báo; có chạy thử trên dữ liệu giả lập và nhật ký từng lượt chạy.
+    - Tự động hóa không vượt qua máy trạng thái: chỉ đi trên cạnh hợp lệ TR-02…TR-09 và tôn trọng cổng deadline.
 
 ---
 
 ## 3. Quản trị dữ liệu & Ranh giới
 
-- Tất cả các chức năng thuộc Work Management lưu trữ dữ liệu tại các schema PostgreSQL độc lập với tiền tố `work_*` (ví dụ: `work_tasks`, `work_task_workflow`, `work_task_comments`, `work_milestones_qa`, `work_timesheets`, `work_calendar`, `work_requests`, `work_messages`, `work_notes`, `work_reports`, `work_notifications`, `work_dashboard`, `work_projects`).
+- Tất cả các chức năng thuộc Work Management lưu trữ dữ liệu tại các schema PostgreSQL độc lập với tiền tố `work_*` (ví dụ: `work_tasks`, `work_task_links`, `work_task_workflow`, `work_task_comments`, `work_milestones_qa`, `work_timesheets`, `work_calendar`, `work_requests`, `work_messages`, `work_notes`, `work_reports`, `work_notifications`, `work_dashboard`, `work_projects`).
 - Liên kết giữa các thực thể (Task $\leftrightarrow$ Project $\leftrightarrow$ Assignee $\leftrightarrow$ Milestone) sử dụng định danh scalar ID, không tạo foreign key xuyên namespace để đảm bảo tính độc lập module.
 - Tích hợp xuyên suốt giữa Task, Workflow, QA Gate và Comments được điều phối tập trung thông qua `work-management.composition.ts`.
+- Tự động hóa nối với Work Management qua bus hạ tầng `core/events/workflow-events.ts`: nơi sở hữu dữ liệu công bố snapshot, quy tắc nằm ở `tenant-system/automation-hub/workflow-rules`, và bộ áp dụng hành động nằm ở `work-management/automation.actions.ts`.

@@ -11,6 +11,15 @@ const routes = [
   "messages",
   "notes",
   "reports",
+  "hr-management/attendance",
+  "hr-management/workforce",
+  "hr-management/explanations",
+  "hr-management/shifts",
+  "hr-management/attendance-reports",
+  "hr-management/leaves",
+  "hr-management/leave-approvals",
+  "hr-management/capacity",
+  "tenant-system/workflow-rules",
 ];
 test("all work modules render, former modules return 404 and UI fits mobile", async ({
   page,
@@ -44,23 +53,35 @@ test("all work modules render, former modules return 404 and UI fits mobile", as
     "manage-information",
     "book",
     "manage-receipt",
-    "hr-management/attendance",
     "crm",
     "tenant-system/tenant-auth",
   ]) {
     expect((await page.goto("/" + route))?.status()).toBe(404);
   }
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/home");
+  await expect(page.locator("main h1")).toBeVisible();
+  await expect(page.locator(".page-footnote")).toContainText(
+    "Tỷ lệ hoàn thành",
+  );
   await page.screenshot({ path: "docs/screenshots/workspace-desktop.png" });
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/tasks");
+    await expect(page.locator("main h1")).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth > innerWidth,
       ),
     ).toBe(false);
+    await page.screenshot({ path: `docs/screenshots/tasks-${width}.png` });
   }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.locator("main h1")).toBeVisible();
+  await expect(page.locator(".page-footnote")).toContainText(
+    "Tỷ lệ hoàn thành",
+  );
   await page.screenshot({ path: "docs/screenshots/workspace-mobile.png" });
   expect(errors).toEqual([]);
 });

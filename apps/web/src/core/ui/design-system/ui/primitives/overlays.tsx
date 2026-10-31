@@ -36,7 +36,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-[100] bg-foreground/35 backdrop-blur-xs" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed z-[101] flex flex-col overflow-auto border border-border bg-surface text-foreground shadow-floating outline-none",
+          "fixed z-[101] flex flex-col overflow-auto border border-glass-border bg-glass text-foreground shadow-glass backdrop-blur-glass outline-none",
           sheet
             ? "inset-y-0 right-0 w-full max-w-md border-y-0 border-r-0"
             : "top-1/2 left-1/2 max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-panel",

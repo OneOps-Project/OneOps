@@ -113,6 +113,15 @@ export const proposalSchema = z
   })
   .strict();
 
+/** A legal move; `blockedBy` counts the open tasks that still hold it back. */
+const allowedMoveSchema = z
+  .object({
+    code: z.string(),
+    to: z.string(),
+    blockedBy: z.number().int().min(0),
+  })
+  .strict();
+
 export const taskStateSchema = z
   .object({
     task: z
@@ -127,7 +136,7 @@ export const taskStateSchema = z
         version: z.number().int().positive(),
       })
       .strict(),
-    allowed: z.array(z.object({ code: z.string(), to: z.string() }).strict()),
+    allowed: z.array(allowedMoveSchema),
     pendingProposal: proposalSchema.nullable(),
     restoreStatus: z.string().nullable(),
     history: z.array(transitionSchema),
@@ -138,7 +147,7 @@ export const allowedEntrySchema = z
   .object({
     taskId: z.uuid(),
     status: z.string(),
-    allowed: z.array(z.object({ code: z.string(), to: z.string() }).strict()),
+    allowed: z.array(allowedMoveSchema),
     pendingProposal: proposalSchema.nullable(),
     restoreStatus: z.string().nullable(),
   })
@@ -181,6 +190,73 @@ export type TaskUpdate = Omit<z.input<typeof updateSchema>, "version">;
 export type TaskState = z.infer<typeof taskStateSchema>;
 export type TaskTransition = z.infer<typeof transitionSchema>;
 export type AllowedEntry = z.infer<typeof allowedEntrySchema>;
+/** Link types mirror the API; only `BLOCKS` gates the workflow. */
+export const LINK_TYPES = ["BLOCKS", "RELATES_TO", "DUPLICATES"] as const;
+export const linkTypeSchema = z.enum(LINK_TYPES);
+export type LinkType = (typeof LINK_TYPES)[number];
+
+export const taskRefSchema = z
+  .object({
+    id: z.uuid(),
+    code: z.string(),
+    name: z.string(),
+    status: z.string(),
+    assignee: z.string(),
+  })
+  .strict();
+
+const linkSchema = z
+  .object({
+    id: z.uuid(),
+    fromTaskId: z.uuid(),
+    toTaskId: z.uuid(),
+    type: linkTypeSchema,
+    note: z.string(),
+    createdBy: z.string(),
+    createdAt: z.iso.datetime(),
+  })
+  .strict();
+
+export const linkViewSchema = linkSchema
+  .extend({ counterpart: taskRefSchema })
+  .strict();
+
+export const neighborhoodSchema = z
+  .object({
+    task: taskRefSchema,
+    incoming: z.array(linkViewSchema),
+    outgoing: z.array(linkViewSchema),
+  })
+  .strict();
+
+export const blockerEntrySchema = z
+  .object({
+    taskId: z.uuid(),
+    total: z.number().int(),
+    open: z.number().int(),
+    codes: z.array(z.string()),
+  })
+  .strict();
+
+export const blockerResponseSchema = z
+  .object({ items: z.array(blockerEntrySchema) })
+  .strict();
+
+export const linkInput = z
+  .object({
+    fromTaskId: z.uuid(),
+    toTaskId: z.uuid(),
+    type: linkTypeSchema,
+    note: z.string().trim().max(500).optional(),
+  })
+  .strict();
+
+export type AllowedMove = z.infer<typeof allowedMoveSchema>;
 export type TaskProposal = z.infer<typeof proposalSchema>;
 export type ProposalInput = z.input<typeof proposalInput>;
 export type DecisionInput = z.input<typeof decisionInput>;
+export type TaskRef = z.infer<typeof taskRefSchema>;
+export type TaskLink = z.infer<typeof linkViewSchema>;
+export type TaskNeighborhood = z.infer<typeof neighborhoodSchema>;
+export type BlockerEntry = z.infer<typeof blockerEntrySchema>;
+export type LinkInput = z.input<typeof linkInput>;

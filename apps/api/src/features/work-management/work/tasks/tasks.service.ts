@@ -9,16 +9,67 @@ import {
   NotificationEvents,
   parseRecipients,
 } from "../../../../core/events/notification-events.js";
+import {
+  WorkflowEvents,
+  type WorkflowField,
+} from "../../../../core/events/workflow-events.js";
 import type { RecordInput, TaskStatus } from "./dto/tasks.dto.js";
 import type { Transaction } from "../../../../core/database/database.module.js";
 import type { ListQuery } from "./dto/tasks.dto.js";
+
+/** What the automation engine needs to know about a task, and nothing more. */
+interface TaskRow {
+  id: string;
+  code: string;
+  name: string;
+  status: string;
+  scope: string;
+  date: string;
+  assignee: string;
+  reviewer: string;
+}
+
+const WORKFLOW_FIELDS: readonly WorkflowField[] = [
+  "status",
+  "assignee",
+  "reviewer",
+  "scope",
+  "code",
+  "name",
+  "date",
+];
 
 @Injectable()
 export class TasksService {
   constructor(
     private readonly repository: TasksRepository,
     private readonly events: NotificationEvents,
+    private readonly workflow: WorkflowEvents,
   ) {}
+
+  /** Publishes the snapshot the automation engine evaluates. */
+  private publish(task: TaskRow, previous?: TaskRow) {
+    this.workflow.emitTrigger({
+      entity: "task",
+      id: task.id,
+      code: task.code,
+      name: task.name,
+      status: task.status,
+      assignee: task.assignee,
+      reviewer: task.reviewer,
+      scope: task.scope,
+      date: task.date,
+      ...(previous
+        ? {
+            previous: Object.fromEntries(
+              WORKFLOW_FIELDS.filter(
+                (field) => task[field] !== previous[field],
+              ).map((field) => [field, previous[field]]),
+            ),
+          }
+        : {}),
+    });
+  }
 
   list(query: ListQuery) {
     return this.repository.list(query);
@@ -51,6 +102,7 @@ export class TasksService {
         link: `/work-management/tasks?focus=${created.id}`,
         sourceId: created.id,
       });
+    this.publish(created);
     return created;
   }
 
@@ -114,16 +166,22 @@ export class TasksService {
       });
     }
 
+    this.publish(updated, current);
     return updated;
   }
 
   /** Reserved for the workflow composition; the HTTP contract never accepts a status. */
   async applyStatus(id: string, status: TaskStatus, version: number) {
-    return this.repository.applyStatus(id, status, version);
+    const current = await this.repository.get(id);
+    const updated = await this.repository.applyStatus(id, status, version);
+    this.publish(updated, current);
+    return updated;
   }
 
   async setDeadline(id: string, date: string, version: number) {
+    const current = await this.repository.get(id);
     const updated = await this.repository.setDeadline(id, date, version);
+    this.publish(updated, current);
     this.events.emit({
       source: "task",
       recipients: parseRecipients(

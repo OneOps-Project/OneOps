@@ -67,8 +67,8 @@ export function DesignSystem() {
     downloadDesignTokens(preferences.theme, preferences.density);
 
   return (
-    <div className="min-h-full bg-background text-foreground">
-      <div className="flex items-center justify-between gap-4 border-b border-border bg-surface px-5 py-4 sm:px-8">
+    <div className="min-h-full text-foreground">
+      <div className="flex items-center justify-between gap-4 border-b border-glass-border bg-glass px-5 py-3 backdrop-blur-glass sm:px-8">
         <div className="flex items-center gap-3">
           <span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-accent text-primary">
             <Layers3 className="size-4" />
@@ -79,7 +79,7 @@ export function DesignSystem() {
               <span className="font-normal text-subtle-foreground">/</span>{" "}
               Design system
             </span>
-            <Badge className="text-[10px]">v1.0</Badge>
+            <Badge className="text-[10px]">v3.0</Badge>
           </div>
         </div>
         <div className="hidden gap-3 sm:flex">
@@ -154,7 +154,7 @@ export function DesignSystem() {
               </button>
             ))}
           </nav>
-          <div className="mt-8 rounded-panel border border-border bg-surface p-4">
+          <div className="mt-8 rounded-card border border-glass-border bg-glass p-4 shadow-glass backdrop-blur-glass">
             <ShieldCheck className="mb-3 size-5 text-success" />
             <p className="text-xs font-semibold">Thiết kế có hệ thống</p>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
@@ -170,30 +170,31 @@ export function DesignSystem() {
           </div>
         </aside>
         <div className="min-w-0 flex-1">
-          <div className="relative mb-9 overflow-hidden rounded-2xl border border-border bg-surface px-6 py-8 sm:px-9 sm:py-10">
-            <div className="pointer-events-none absolute top-0 right-0 size-80 translate-x-1/3 -translate-y-1/3 rounded-full bg-brand-500/5" />
-            <div className="pointer-events-none absolute top-0 right-0 size-60 translate-x-1/3 -translate-y-1/3 rounded-full border border-brand-500/10" />
-            <div className="relative">
+          <section className="hero mb-9" aria-labelledby="ds-title">
+            <div className="hero-copy">
               <div className="mb-5 flex flex-wrap items-center gap-2">
                 <Badge variant="brand">
                   <span className="size-1.5 rounded-full bg-current" />
-                  OneOps UI
+                  OneOps UI · Aurora
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   Tailwind CSS · React · Radix
                 </span>
               </div>
-              <h1 className="max-w-2xl text-3xl leading-tight font-semibold tracking-[-.035em] sm:text-[40px] sm:leading-[1.2]">
+              <h1
+                id="ds-title"
+                className="max-w-2xl text-3xl leading-tight font-semibold tracking-[-.035em] sm:text-[40px] sm:leading-[1.2]"
+              >
                 Hệ thống thiết kế
                 <br />
                 <span className="text-primary">cho mọi luồng nghiệp vụ.</span>
               </h1>
-              <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">
-                Phát triển từ giao diện OneOps hiện tại. Một bộ thành phần nhất
-                quán, có thể tái sử dụng, từ trường nhập liệu đến quy trình xử
-                lý công việc.
+              <p className="hero-lede max-w-xl">
+                Nền sương dịu, khung kính mờ và lưới bento: cùng một bộ token,
+                cùng một hành vi, từ trường nhập liệu đến quy trình xử lý công
+                việc.
               </p>
-              <div className="mt-7 flex flex-wrap gap-3">
+              <div className="hero-actions mt-7">
                 <Button asChild>
                   <a href="#catalog-start">
                     Khám phá thành phần
@@ -205,12 +206,12 @@ export function DesignSystem() {
                   Tải design tokens
                 </Button>
               </div>
-              <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 border-t border-border pt-6">
+              <div className="hero-meta gap-x-8 border-t border-glass-border pt-6">
                 {[
                   [`${componentCount}+`, "thành phần & mẫu"],
-                  ["12", "phân hệ đồng bộ"],
+                  ["04", "phân hệ đang dùng"],
                   ["02", "giao diện sáng / tối"],
-                  ["AA*", "mục tiêu tương phản"],
+                  ["AA", "mục tiêu tương phản"],
                 ].map(([value, label]) => (
                   <div key={label}>
                     <span className="text-xl font-semibold tracking-tight">
@@ -223,7 +224,7 @@ export function DesignSystem() {
                 ))}
               </div>
             </div>
-          </div>
+          </section>
           <div id="catalog-start" className="mb-7 scroll-mt-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -278,7 +279,7 @@ export function DesignSystem() {
               </div>
             )}
           </div>
-          <div className="space-y-12">
+          <div className="space-y-10">
             {visible.map((section) => {
               const Demo = demos[section.id];
               return (
@@ -289,7 +290,7 @@ export function DesignSystem() {
                   className="scroll-mt-6"
                 >
                   <div className="mb-5 flex items-start gap-3">
-                    <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface font-mono text-xs text-subtle-foreground">
+                    <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-accent font-mono text-xs text-primary">
                       {section.number}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -336,7 +337,7 @@ export function DesignSystem() {
           </div>
           <footer className="mt-12 border-t border-border pt-6 pb-3 text-xs leading-6 text-subtle-foreground">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p>OneOps Design System · v1.0 · Dựa trên bộ UI hiện tại</p>
+              <p>OneOps Design System · v3.0 · Nền Aurora</p>
               <Link
                 href="/home"
                 className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"

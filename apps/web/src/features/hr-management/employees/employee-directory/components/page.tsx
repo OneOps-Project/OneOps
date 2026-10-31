@@ -101,33 +101,36 @@ export function ModulePage() {
   return (
     <div className="module-view">
       <section className="records-panel">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <header className="page-header">
           <div>
+            <span className="eyebrow">Nhân sự · Hồ sơ</span>
             <h1>{definition.title}</h1>
             <p>
               Hồ sơ nhân sự dùng cho phân công công việc, điểm danh và báo cáo;
               chức danh chỉ là thuộc tính, không cấp quyền.
             </p>
           </div>
-          <Button onClick={() => setCreating(true)}>Thêm nhân viên</Button>
-        </div>
+          <div className="page-actions">
+            <Button onClick={() => setCreating(true)}>Thêm nhân viên</Button>
+          </div>
+        </header>
 
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Tổng nhân sự</p>
-            <p className="text-2xl font-semibold">{employees.length}</p>
+        <dl className="metric-strip">
+          <div className="metric">
+            <dt>Tổng nhân sự</dt>
+            <dd>{employees.length}</dd>
           </div>
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Đang làm việc</p>
-            <p className="text-2xl font-semibold">{activeCount}</p>
+          <div className="metric">
+            <dt>Đang làm việc</dt>
+            <dd>{activeCount}</dd>
           </div>
-          <div className="rounded-panel border border-border bg-surface p-3">
-            <p className="text-xs text-muted-foreground">Phòng ban</p>
-            <p className="text-2xl font-semibold">{departments.length}</p>
+          <div className="metric">
+            <dt>Phòng ban</dt>
+            <dd>{departments.length}</dd>
           </div>
-        </div>
+        </dl>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="toolbar">
           <Input
             aria-label="Tìm nhân viên"
             placeholder="Tìm theo mã, tên, email, chức danh…"
@@ -176,13 +179,13 @@ export function ModulePage() {
             Đang tải danh bạ nhân sự…
           </p>
         ) : !filtered.length ? (
-          <div className="rounded-panel border border-border bg-surface p-4">
-            <h2 className="text-sm font-semibold">
+          <div className="surface empty-state">
+            <h2>
               {employees.length
                 ? "Không có nhân sự phù hợp"
                 : "Chưa có nhân sự"}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p>
               {employees.length
                 ? "Xóa hoặc đổi điều kiện lọc để xem lại."
                 : "Thêm nhân sự đầu tiên để bắt đầu phân công công việc."}

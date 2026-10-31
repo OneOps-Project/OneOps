@@ -10,7 +10,15 @@ import { CreateForm as reports } from "@/features/work-management/coordination/w
 import { CreateForm as organization } from "@/features/hr-management/organization/departments-teams/index";
 import { CreateForm as positions } from "@/features/hr-management/organization/positions-grades/index";
 import { CreateForm as employees } from "@/features/hr-management/employees/employee-directory/index";
+import { CreateForm as capacity } from "@/features/hr-management/employees/resource-capacity/index";
+import { CreateForm as attendance } from "@/features/hr-management/attendance/daily-checkin/index";
+import { CreateForm as workforce } from "@/features/hr-management/attendance/workforce-board/index";
+import { CreateForm as explanations } from "@/features/hr-management/attendance/checkin-explanations/index";
+import { CreateForm as shifts } from "@/features/hr-management/attendance/shifts-schedules/index";
+import { CreateForm as attendanceReports } from "@/features/hr-management/attendance/attendance-reports/index";
+import { CreateForm as leaves } from "@/features/hr-management/leaves/leave-requests/index";
 import { CreateForm as accounts } from "@/features/tenant-system/access-control/accounts/index";
+import { CreateForm as policies } from "@/features/tenant-system/organization/work-policies/index";
 export const moduleForms = {
   "work-management/tasks": tasks,
   "work-management/projects": projects,
@@ -24,5 +32,13 @@ export const moduleForms = {
   "hr-management/organization": organization,
   "hr-management/positions": positions,
   "hr-management/employees": employees,
+  "hr-management/capacity": capacity,
+  "hr-management/attendance": attendance,
+  "hr-management/workforce": workforce,
+  "hr-management/explanations": explanations,
+  "hr-management/shifts": shifts,
+  "hr-management/attendance-reports": attendanceReports,
+  "hr-management/leaves": leaves,
   "tenant-system/accounts": accounts,
+  "tenant-system/work-policies": policies,
 };

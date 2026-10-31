@@ -16,6 +16,7 @@ const sourceLabels: Record<string, string> = {
   comment: "Bình luận",
   message: "Tin nhắn",
   meeting: "Cuộc họp",
+  request: "Phê duyệt",
 };
 
 export function ModulePage() {

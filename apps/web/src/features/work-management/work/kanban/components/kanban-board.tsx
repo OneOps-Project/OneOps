@@ -82,13 +82,20 @@ export function KanbanBoard({
                   >
                     <div className={styles.meta}>
                       <span>{task.code}</span>
-                      <Badge
-                        variant={
-                          task.priority === "Khẩn cấp" ? "danger" : "neutral"
-                        }
-                      >
-                        {task.priority || "Trung bình"}
-                      </Badge>
+                      <span className={styles.tags}>
+                        {task.blocked ? (
+                          <Badge variant="warning">
+                            Chờ {task.blocked} việc
+                          </Badge>
+                        ) : null}
+                        <Badge
+                          variant={
+                            task.priority === "Khẩn cấp" ? "danger" : "neutral"
+                          }
+                        >
+                          {task.priority || "Trung bình"}
+                        </Badge>
+                      </span>
                     </div>
                     <button
                       type="button"

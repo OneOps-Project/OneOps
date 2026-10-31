@@ -16,3 +16,56 @@ model WorkProject {
   @@map("records")
   @@schema("work_projects")
 }
+
+/// Time-boxed iteration of a project space: PLANNED -> ACTIVE -> CLOSED.
+/// Only one gate may be ACTIVE per project; `committed`/`completed`/`carried`
+/// are snapshots written by the sprint lifecycle, never by hand.
+model ProjectSprint {
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @db.Uuid
+  name        String    @db.VarChar(200)
+  goal        String    @default("") @db.VarChar(2000)
+  status      String    @default("PLANNED") @db.VarChar(20)
+  startDate   DateTime  @db.Date
+  endDate     DateTime  @db.Date
+  capacity    Int       @default(0)
+  committed   Int       @default(0)
+  completed   Int       @default(0)
+  carried     Int       @default(0)
+  activatedAt DateTime?
+  closedAt    DateTime?
+  note        String    @default("") @db.VarChar(2000)
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  items       ProjectBacklogItem[]
+
+  @@unique([projectId, name])
+  @@index([projectId, status])
+  @@map("project_sprints")
+  @@schema("work_projects")
+}
+
+/// One task in the product backlog (`sprintId` null) or inside a sprint.
+/// `rank` keeps the planner order dense; `completedAt` is stamped the first
+/// time the board observes the task as done, which feeds the burndown.
+model ProjectBacklogItem {
+  id           String         @id @default(uuid()) @db.Uuid
+  projectId    String         @db.Uuid
+  taskId       String         @db.Uuid
+  sprintId     String?        @db.Uuid
+  rank         Int            @default(0)
+  points       Int            @default(0)
+  carriedFrom  String?        @db.Uuid
+  carriedTimes Int            @default(0)
+  completedAt  DateTime?
+  version      Int            @default(1)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  sprint       ProjectSprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, taskId])
+  @@index([projectId, sprintId, rank])
+  @@map("project_backlog_items")
+  @@schema("work_projects")
+}

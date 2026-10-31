@@ -16,3 +16,46 @@ model WorkRequest {
   @@map("records")
   @@schema("work_requests")
 }
+
+/// One ordered gate of the approval chain; the SLA clock starts when it becomes active.
+model WorkRequestApprovalStep {
+  id          String    @id @default(uuid()) @db.Uuid
+  requestId   String    @db.Uuid
+  position    Int
+  name        String    @db.VarChar(200)
+  quorum      String    @default("ANY") @db.VarChar(20)
+  slaHours    Int
+  status      String    @default("PENDING") @db.VarChar(20)
+  startedAt   DateTime  @default(now())
+  dueAt       DateTime
+  decidedAt   DateTime?
+  decidedBy   String    @default("") @db.VarChar(200)
+  escalatedAt DateTime?
+  note        String    @default("") @db.VarChar(500)
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  approvers   WorkRequestApprover[]
+  @@unique([requestId, position])
+  @@index([requestId, status])
+  @@index([status, dueAt])
+  @@map("request_approval_steps")
+  @@schema("work_requests")
+}
+
+/// Vote of one person on one step; a role step only gains rows once someone decides.
+model WorkRequestApprover {
+  id          String   @id @default(uuid()) @db.Uuid
+  stepId      String   @db.Uuid
+  approver    String   @db.VarChar(150)
+  displayName String   @db.VarChar(200)
+  decision    String   @default("PENDING") @db.VarChar(20)
+  comment     String   @default("") @db.VarChar(2000)
+  decidedAt   DateTime?
+  createdAt   DateTime @default(now())
+  step        WorkRequestApprovalStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  @@unique([stepId, approver])
+  @@index([approver, decision])
+  @@map("request_approvers")
+  @@schema("work_requests")
+}

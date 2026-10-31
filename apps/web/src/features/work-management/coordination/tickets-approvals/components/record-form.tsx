@@ -44,7 +44,8 @@ export function RecordForm({
           code: String(data.get("code") || "").trim(),
           name: String(data.get("name") || "").trim(),
           date: String(data.get("date")),
-          status: String(data.get("status")),
+          // The approval engine owns the status; an edit never changes it here.
+          status: record?.status ?? definition.statuses[0],
           assignee: String(data.get("assignee") || "").trim(),
           note: String(data.get("note") || "").trim(),
           scope: record?.scope || "",
@@ -112,17 +113,10 @@ export function RecordForm({
           />
         </label>
         <div className="form-grid">
-          <label>
-            Trạng thái
-            <Select
-              name="status"
-              defaultValue={record?.status || definition.statuses[0]}
-            >
-              {definition.statuses.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </Select>
-          </label>
+          <p className="text-sm text-muted-foreground">
+            Trạng thái do quy trình phê duyệt quyết định. Đề xuất mới bắt đầu ở
+            bước chờ duyệt đầu tiên.
+          </p>
           <label>
             {definition.personLabel}
             <Input

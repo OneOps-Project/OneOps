@@ -8,3 +8,4 @@ export {
   TenantAuthService,
   SessionGuard,
 } from "./access-control/tenant-auth/index.js";
+export { WorkPoliciesService } from "./organization/work-policies/index.js";

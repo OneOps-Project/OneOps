@@ -1,7 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import {
+  ListChecks,
+  LockKeyhole,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { useSession } from "@/features/tenant-system/access-control/tenant-auth/hooks/session";
 import { roleLabels } from "@/features/tenant-system/access-control/tenant-auth/constants";
 import { Input } from "@/features/tenant-system/access-control/tenant-auth/components/primitives/forms";
@@ -12,6 +18,7 @@ import {
   credentialSchema,
   passwordChangeSchema,
 } from "@/features/tenant-system/access-control/tenant-auth/types";
+import styles from "@/features/tenant-system/access-control/tenant-auth/components/styles.module.css";
 
 const messageOf = (error: unknown) =>
   error instanceof Error ? error.message : "Không thể kết nối máy chủ.";
@@ -99,28 +106,63 @@ export function ModulePage() {
     }
   };
   return (
-    <div className="grid min-h-dvh place-items-center bg-muted px-4 py-10">
-      <main className="w-full max-w-md">
-        <div className="mb-6 flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-control bg-primary text-primary-foreground">
-            <ShieldCheck className="size-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p className="text-lg font-bold tracking-tight">OneOps</p>
-            <p className="text-xs text-muted-foreground">Không gian làm việc</p>
-          </div>
+    <div className={styles.screen}>
+      <aside className={styles.brand} aria-label="Giới thiệu OneOps">
+        <div>
+          <p className={styles.brandMark}>
+            <span className={styles.brandBadge}>
+              <ShieldCheck className="size-4" aria-hidden="true" />
+            </span>
+            OneOps
+          </p>
+          <h2 className={styles.brandHeadline}>
+            Một không gian cho công việc, nhân sự và vận hành.
+          </h2>
+          <p className={styles.brandLede}>
+            Mỗi phân hệ giữ đúng phần việc của mình: công việc và quy trình ở
+            Công việc, hồ sơ và chấm công ở Nhân sự, tài khoản và nhật ký ở Hệ
+            thống.
+          </p>
+          <ul className={styles.brandList}>
+            <li>
+              <ListChecks className="size-4" aria-hidden="true" />
+              Một hàng đợi công việc, lọc theo người làm và hạn chót.
+            </li>
+            <li>
+              <Users className="size-4" aria-hidden="true" />
+              Chấm công, nghỉ phép và duyệt đề xuất trong cùng một chỗ.
+            </li>
+            <li>
+              <Sparkles className="size-4" aria-hidden="true" />
+              Quy tắc tự động nhắc việc thay vì phải nhớ từng mốc.
+            </li>
+          </ul>
         </div>
-        <section className="rounded-panel border border-border bg-surface p-6 shadow-panel">
+        <p className={styles.brandFoot}>
+          <LockKeyhole className="size-3.5" aria-hidden="true" />
+          Dữ liệu nội bộ · mọi thao tác đều được ghi nhật ký.
+        </p>
+      </aside>
+
+      <main className={styles.panel}>
+        <div className={styles.card}>
+          <div className={styles.cardMark}>
+            <span className={styles.markIcon}>
+              <ShieldCheck className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className={styles.markName}>OneOps</p>
+              <p className={styles.markTag}>Không gian làm việc</p>
+            </div>
+          </div>
           {step === "login" && actor ? (
             <>
-              <h1 className="text-xl font-semibold text-foreground">
-                Đang đăng nhập
-              </h1>
-              <p className="mt-1 mb-5 text-sm text-muted-foreground">
+              <h1 className={styles.title}>Đang đăng nhập</h1>
+              <p className={styles.lede}>
                 {actor.displayName} · {roleLabels[actor.role]}
                 {actor.isSystemAdmin ? " · Quản trị hệ thống" : ""}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className={styles.actions}>
                 <Button size="lg" onClick={enter}>
                   Vào không gian làm việc
                 </Button>
@@ -137,14 +179,14 @@ export function ModulePage() {
             </>
           ) : (
             <>
-              <h1 className="text-xl font-semibold text-foreground">
+              <h1 className={styles.title}>
                 {step === "setup"
                   ? "Tạo quản trị đầu tiên"
                   : step === "password"
                     ? "Đổi mật khẩu lần đầu"
                     : "Đăng nhập OneOps"}
               </h1>
-              <p className="mt-1 mb-5 text-sm text-muted-foreground">
+              <p className={styles.lede}>
                 {step === "setup"
                   ? "Hệ thống chưa có tài khoản. Tài khoản đầu tiên phải là Quản lý kèm quyền quản trị hệ thống."
                   : step === "password"
@@ -153,11 +195,7 @@ export function ModulePage() {
                       ? "Đang kiểm tra phiên đăng nhập…"
                       : `Phiên làm việc tự khóa sau ${idleMinutes} phút không hoạt động.`}
               </p>
-              <form
-                className="flex flex-col gap-4"
-                onSubmit={submit}
-                noValidate
-              >
+              <form className={styles.form} onSubmit={submit} noValidate>
                 {step === "setup" && (
                   <Field label="Tên hiển thị">
                     <Input
@@ -249,8 +287,8 @@ export function ModulePage() {
               </form>
             </>
           )}
-        </section>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
+        </div>
+        <p className={styles.note}>
           Chức danh không cấp quyền; quyền chỉ đến từ vai trò và cờ quản trị hệ
           thống.
         </p>

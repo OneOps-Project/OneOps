@@ -1,0 +1,22 @@
+model LeaveRequest {
+  id            String    @id @default(uuid()) @db.Uuid
+  employeeId    String    @db.VarChar(64)
+  employeeName  String    @db.VarChar(200)
+  leaveType     String    @default("ANNUAL") @db.VarChar(20)
+  fromDate      String    @db.VarChar(10)
+  toDate        String    @db.VarChar(10)
+  days          Float     @default(0)
+  reason        String    @db.VarChar(1000)
+  status        String    @default("PENDING") @db.VarChar(20)
+  decidedBy     String    @default("") @db.VarChar(200)
+  decidedAt     DateTime?
+  decisionNote  String    @default("") @db.VarChar(500)
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, fromDate])
+  @@index([employeeId, fromDate])
+  @@map("leave_requests")
+  @@schema("hr_leaves")
+}

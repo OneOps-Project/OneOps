@@ -6,6 +6,16 @@ if (!new URL(databaseUrl).pathname.endsWith("_test"))
   throw new Error(
     "TEST_DATABASE_URL must point to a dedicated database ending in _test",
   );
+export async function runSql(statement, values = []) {
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    return await client.query(statement, values);
+  } finally {
+    await client.end();
+  }
+}
+
 export async function cleanDatabase() {
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();

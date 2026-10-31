@@ -126,6 +126,81 @@
   color: var(--foreground-muted);
   margin: 8px 0 0;
 }
+.approval {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.approvalHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.approvalHead h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.chain {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control, 10px);
+  background: var(--surface);
+}
+.step p {
+  margin: 0;
+}
+.stepHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.stepTitle {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.stepIndex {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--foreground-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.stepNote {
+  color: var(--foreground-muted);
+  font-size: 12px;
+}
+.approvalActions,
+.approvalExtras {
+  display: grid;
+  gap: 8px;
+}
+.approvalForm {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-control, 10px);
+}
 @media (max-width: 800px) {
   .header h1 {
     font-size: 20px;

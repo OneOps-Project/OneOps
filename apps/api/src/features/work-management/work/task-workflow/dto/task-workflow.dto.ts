@@ -104,11 +104,20 @@ export const proposalSchema = z
   })
   .strict();
 
+/** A legal move; `blockedBy` > 0 explains why starting it is currently refused. */
+export const allowedMoveSchema = z
+  .object({
+    code: z.string(),
+    to: z.string(),
+    blockedBy: z.number().int().min(0),
+  })
+  .strict();
+
 export const allowedEntrySchema = z
   .object({
     taskId: z.uuid(),
     status: z.string(),
-    allowed: z.array(z.object({ code: z.string(), to: z.string() }).strict()),
+    allowed: z.array(allowedMoveSchema),
     pendingProposal: proposalSchema.nullable(),
     restoreStatus: z.string().nullable(),
   })
@@ -128,7 +137,7 @@ export const taskStateSchema = z
         version: z.number().int().positive(),
       })
       .strict(),
-    allowed: z.array(z.object({ code: z.string(), to: z.string() }).strict()),
+    allowed: z.array(allowedMoveSchema),
     pendingProposal: proposalSchema.nullable(),
     restoreStatus: z.string().nullable(),
     history: z.array(transitionSchema),
@@ -142,4 +151,5 @@ export type ProposalQuery = z.infer<typeof proposalQuery>;
 export type TransitionDto = z.infer<typeof transitionSchema>;
 export type ProposalDto = z.infer<typeof proposalSchema>;
 export type AllowedEntry = z.infer<typeof allowedEntrySchema>;
+export type AllowedMove = z.infer<typeof allowedMoveSchema>;
 export type TaskStateDto = z.infer<typeof taskStateSchema>;

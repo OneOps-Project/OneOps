@@ -10,7 +10,8 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
+        primary:
+          "btn-gradient bg-primary text-primary-foreground hover:bg-primary-hover",
         secondary:
           "border border-border bg-surface text-foreground hover:bg-muted",
         soft: "bg-accent text-accent-foreground hover:bg-brand-100 dark:hover:bg-brand-900",

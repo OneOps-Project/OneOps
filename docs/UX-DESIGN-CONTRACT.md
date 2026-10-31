@@ -48,19 +48,19 @@ Chi tiết entity dùng tab có thứ tự ổn định, phần tóm tắt trên
 
 Mỗi màn hình/package phải định nghĩa và kiểm tra:
 
-| Trạng thái | Yêu cầu |
-| --- | --- |
-| Initial loading | Skeleton đúng cấu trúc, không spinner toàn trang nếu chỉ tải một vùng |
-| Refetch | Giữ nội dung cũ, chỉ báo đang cập nhật; tránh nháy layout |
-| Empty | Giải thích vì sao trống và hành động tiếp theo; không chỉ “Không có dữ liệu” |
-| Filtered empty | Nêu filter đang bật và cách xóa |
-| Error | Thông điệp theo `code`, hướng khắc phục, retry nếu an toàn; không lộ stack/secret |
-| Forbidden | Giải thích thiếu quyền/scope, không giả vờ 404 nếu UX cần minh bạch; server vẫn quyết định |
-| Offline/reconnect | Hiển thị trạng thái kết nối, dữ liệu có thể đã cũ, tự phục hồi/replay |
-| Stale/conflict | Báo version conflict, giữ dữ liệu nhập và cho tải lại/đối chiếu |
-| Success | Xác nhận sau commit; cập nhật UI bằng dữ liệu server trả về |
-| Long content | Không tràn ngang; text dài wrap/line-clamp có cách xem đầy đủ |
-| Disabled/read-only | Nêu lý do ở tooltip/help text gần control; không chỉ giảm opacity |
+| Trạng thái         | Yêu cầu                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| Initial loading    | Skeleton đúng cấu trúc, không spinner toàn trang nếu chỉ tải một vùng                      |
+| Refetch            | Giữ nội dung cũ, chỉ báo đang cập nhật; tránh nháy layout                                  |
+| Empty              | Giải thích vì sao trống và hành động tiếp theo; không chỉ “Không có dữ liệu”               |
+| Filtered empty     | Nêu filter đang bật và cách xóa                                                            |
+| Error              | Thông điệp theo `code`, hướng khắc phục, retry nếu an toàn; không lộ stack/secret          |
+| Forbidden          | Giải thích thiếu quyền/scope, không giả vờ 404 nếu UX cần minh bạch; server vẫn quyết định |
+| Offline/reconnect  | Hiển thị trạng thái kết nối, dữ liệu có thể đã cũ, tự phục hồi/replay                      |
+| Stale/conflict     | Báo version conflict, giữ dữ liệu nhập và cho tải lại/đối chiếu                            |
+| Success            | Xác nhận sau commit; cập nhật UI bằng dữ liệu server trả về                                |
+| Long content       | Không tràn ngang; text dài wrap/line-clamp có cách xem đầy đủ                              |
+| Disabled/read-only | Nêu lý do ở tooltip/help text gần control; không chỉ giảm opacity                          |
 
 ## 6. Responsive
 
@@ -99,17 +99,17 @@ Mục tiêu WCAG 2.2 AA cho các luồng được giao; chỉ tuyên bố “đ�
 
 ## 10. Ownership và gate theo package
 
-| Vai trò | Trách nhiệm | Không được làm |
-| --- | --- | --- |
-| UX Researcher + Persona Walkthrough | Inventory top task, friction, journey Employee/Manager/admin; kiểm tra lại sau implement | Tự đổi business rule hoặc bỏ qua scope |
-| UX Architect | IA, hierarchy, responsive flow, state matrix, keyboard/focus | Tạo theme/component toàn cục |
-| UI Designer | High-fidelity key screens, component spec trong token hiện có | Thêm hex, token mới, style toàn cục |
-| Brand Guardian | Nhận diện, typography, spacing, nhất quán cross-feature | Trang trí lấn át hierarchy |
-| Inclusive Visuals Specialist | Contrast, target, non-color cue, text resize, icon/imagery | Chỉ dựa vào màu hoặc hình |
-| Whimsy Injector | Gợi ý micro-feedback có ích, tiết chế | Animation/illustration gây chậm hoặc phân tâm |
-| Frontend Developer | Implement đúng contract, primitive nội bộ feature, state/async | Import UI feature khác hoặc thêm dependency UI mới |
-| Realtime Engineer | Trạng thái kết nối/replay/optimistic update | Tự tạo nguồn dữ liệu thứ hai |
-| UI Finish Gate Reviewer | So screenshot, state, keyboard, mobile, 4 profile; quyết định pass/fail | Chấp nhận happy path thiếu state |
+| Vai trò                             | Trách nhiệm                                                                              | Không được làm                                     |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| UX Researcher + Persona Walkthrough | Inventory top task, friction, journey Employee/Manager/admin; kiểm tra lại sau implement | Tự đổi business rule hoặc bỏ qua scope             |
+| UX Architect                        | IA, hierarchy, responsive flow, state matrix, keyboard/focus                             | Tạo theme/component toàn cục                       |
+| UI Designer                         | High-fidelity key screens, component spec trong token hiện có                            | Thêm hex, token mới, style toàn cục                |
+| Brand Guardian                      | Nhận diện, typography, spacing, nhất quán cross-feature                                  | Trang trí lấn át hierarchy                         |
+| Inclusive Visuals Specialist        | Contrast, target, non-color cue, text resize, icon/imagery                               | Chỉ dựa vào màu hoặc hình                          |
+| Whimsy Injector                     | Gợi ý micro-feedback có ích, tiết chế                                                    | Animation/illustration gây chậm hoặc phân tâm      |
+| Frontend Developer                  | Implement đúng contract, primitive nội bộ feature, state/async                           | Import UI feature khác hoặc thêm dependency UI mới |
+| Realtime Engineer                   | Trạng thái kết nối/replay/optimistic update                                              | Tự tạo nguồn dữ liệu thứ hai                       |
+| UI Finish Gate Reviewer             | So screenshot, state, keyboard, mobile, 4 profile; quyết định pass/fail                  | Chấp nhận happy path thiếu state                   |
 
 Thứ tự gate:
 
@@ -129,3 +129,16 @@ Mỗi UI package cung cấp:
 - Kết quả keyboard/focus, text resize 200%, reduced motion.
 - Đường dẫn file thay đổi và primitive được sở hữu.
 - Finding còn mở hoặc blocker môi trường; không tuyên bố đạt khi chưa chạy.
+
+## 12. Kiến trúc đã chốt trong bản thiết kế lại v1.2
+
+Các quyết định dưới đây là kết quả của vòng thiết kế lại toàn bộ UX/UI; chúng thay thế mô tả cũ khi có khác biệt và là mốc so sánh cho lần thay đổi sau.
+
+- **Điều hướng ba cấp:** rail 68px (cấp 1: Tổng quan, Công việc, Nhân sự, Hệ thống, Thư viện) → panel 268px (cấp 2: chức năng của phân hệ, nhãn eyebrow và nhóm `Bộ lọc` theo trạng thái) → nội dung. Không đưa toàn bộ 26 chức năng vào rail.
+- **Một điểm “đang ở đây”:** `aria-current="page"` chỉ đặt trên mục rail; liên kết trong panel dùng `aria-current="true"` để không tạo nhiều con trỏ trang.
+- **Thứ tự nội dung cố định:** `page-header` → `metric-strip` hoặc dải trọng tâm → `toolbar` → `surface`/bảng → `page-footnote`. Toolbar chia hai nhóm: lọc bên trái, điều khiển hiển thị + đếm kết quả bên phải.
+- **Tổng quan theo việc phải làm:** dải trọng tâm trả lời “cần xử lý trước” (số quá hạn) kèm 4 tín hiệu phụ; danh sách “Việc cần quan tâm” và “Ghim của tôi”. Không dùng lưới 6 thẻ KPI ngang hàng và không hiển thị “—” khi chưa có số liệu — dùng skeleton.
+- **Trạng thái khởi động:** màn hình chờ có nhận diện, nhãn và thanh tiến trình tiết chế thay cho khung trắng; tôn trọng `prefers-reduced-motion`.
+- **Tương phản nhãn phụ:** `foreground-subtle` giữ ≥4,5:1 trên cả `surface` và `canvas`, đủ cho eyebrow, header bảng và chú thích 11–12px.
+- **Vùng chạm:** liên kết panel ≥36px, mục rail ≥54px, nút icon 40px; focus ring dùng token `--ring` cho mọi phần tử tương tác.
+- **Kanban:** các cột cùng chiều cao, vùng thả trống giãn hết cột; khi số cột vượt vùng nhìn, bảng cuộn ngang trong khung nội dung và không làm tràn trang.
