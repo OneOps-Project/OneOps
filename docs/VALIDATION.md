@@ -1,4 +1,27 @@
-# Xác minh sau phân bổ theo file cấu trúc — 29/10/2026
+# Xác minh Checklog tập trung — 30/10/2026
+
+- 31/31 kiểm thử API đạt: 9 tình huống Checklog và 22 tình huống tài khoản/công việc hiện có.
+- 13/13 kiểm thử trình duyệt đạt: thêm 3 luồng Checklog, giữ 10 luồng hiện hữu. Có kiểm tra focus khi đóng dialog, dark/compact và mobile.
+- 6/6 kiểm thử riêng Checklog đạt về redaction đệ quy, dữ liệu cũ, cờ audit, payload và bộ lọc.
+- Build, typecheck, lint, format, token check và kiểm tra ranh giới module đạt; 348 file nguồn reachable.
+- Cùng bảng tenant_audit.entries phục vụ tra cứu tập trung và lịch sử Accounts/Group. Không có endpoint sửa/xóa/tạo thủ công.
+- Migration bổ sung metadata/index và bảo toàn sự kiện cũ. Dữ liệu mới được che trước khi lưu; sự kiện cũ được che khi trả về API.
+- Mặc định quyền xem toàn hệ thống dành cho Quản trị cấp cao; quản trị tài khoản không tự có quyền này. Xem [CHECKLOG.md](CHECKLOG.md).
+
+## Các lần xác minh trước
+
+### Module tài khoản — 30/10/2026
+
+- 4 module chính, 39 nhánh cấu trúc; registry có 14 implementation: 9 có FE/BE và 5 chỉ BE tối thiểu.
+- 329 file nguồn reachable; architecture check, unused check, token check, lint, format, typecheck và build đạt.
+- 22/22 kiểm thử API đạt: quyền quản trị, chống nâng quyền, dữ liệu liên kết, uniqueness, optimistic version, reset mật khẩu, thu hồi phiên, bàn giao task, Group, bootstrap, nguồn truy cập, username và hồi quy công việc.
+- 4/4 kiểm thử validation và băm mật khẩu đạt. 10/10 kiểm thử trình duyệt đạt, gồm 3 luồng tài khoản mới và 7 luồng hiện hữu.
+- Hai migration mới chỉ tạo schema/bảng phụ thuộc và thêm phiên bản phiên; không xóa dữ liệu nghiệp vụ cũ.
+- Lần đầu cần `npm run accounts:bootstrap` để nhập thông tin quản trị thực. Không có tài khoản/mật khẩu mặc định. Xem [ACCOUNTS.md](ACCOUNTS.md).
+
+## Lịch sử xác minh trước khi có module tài khoản
+
+### Sau phân bổ theo file cấu trúc — 29/10/2026
 
 - 4 main groups và 39 thư mục chức năng con đối xứng FE/BE, theo `Cau Truc Thu Muc (1).md`.
 - 8 implementation dữ liệu hiện hữu được di chuyển; không tạo API/trang nghiệp vụ mới cho phần còn trống.

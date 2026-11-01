@@ -18,7 +18,15 @@ async function proxy(
   try {
     const upstream = await fetch(target, {
       method: request.method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("cookie")
+          ? { Cookie: request.headers.get("cookie")! }
+          : {}),
+        ...(request.headers.get("origin")
+          ? { Origin: request.headers.get("origin")! }
+          : {}),
+      },
       ...(["GET", "HEAD"].includes(request.method)
         ? {}
         : { body: await request.text() }),
@@ -32,6 +40,9 @@ async function proxy(
         "Content-Type":
           upstream.headers.get("content-type") || "application/json",
         "Cache-Control": "no-store",
+        ...(upstream.headers.get("set-cookie")
+          ? { "Set-Cookie": upstream.headers.get("set-cookie")! }
+          : {}),
       },
     });
   } catch {

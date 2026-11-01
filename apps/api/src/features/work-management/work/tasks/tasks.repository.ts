@@ -110,6 +110,75 @@ export class TasksRepository {
     }
     return this.get(id, tx);
   }
+  async bindAccountUsername(
+    account: { id: string; username: string },
+    tx: Transaction,
+  ) {
+    const rows = await tx.workTask.findMany({
+      where: { assignee: account.username },
+    });
+    for (const row of rows) {
+      const fields = (row.fields || {}) as RecordDto["fields"];
+      if (fields.assigneeAccountId && fields.assigneeAccountId !== account.id)
+        continue;
+      await tx.workTask.update({
+        where: { id: row.id },
+        data: {
+          fields: { ...fields, assigneeAccountId: account.id },
+          version: { increment: 1 },
+        },
+      });
+    }
+  }
+  async flagAccountTasks(
+    account: {
+      id: string;
+      employeeId: string;
+      employeeCode: string;
+      username: string;
+    },
+    actorId: string,
+    tx: Transaction,
+  ) {
+    const rows = await tx.workTask.findMany({
+      where: {
+        OR: [
+          {
+            assignee: {
+              in: [
+                account.id,
+                account.employeeId,
+                account.employeeCode,
+                account.username,
+              ],
+            },
+          },
+          { fields: { path: ["assigneeAccountId"], equals: account.id } },
+        ],
+        status: { notIn: ["Hoàn thành", "Đã hủy"] },
+      },
+    });
+    for (const row of rows) {
+      const fields = (row.fields || {}) as RecordDto["fields"];
+      await tx.workTask.update({
+        where: { id: row.id },
+        data: {
+          fields: {
+            ...fields,
+            reassignmentRequired: true,
+            reassignmentReason: "Tài khoản người phụ trách bị khóa",
+            reassignmentAt: new Date().toISOString(),
+            reassignmentBy: actorId,
+          },
+          version: { increment: 1 },
+        },
+      });
+    }
+    return rows.map((row) => ({
+      id: row.id,
+      managerAccountId: (row.fields as RecordDto["fields"]).managerAccountId,
+    }));
+  }
   async remove(id: string, version: number, tx: Transaction = this.db) {
     const result = await this.table(tx).deleteMany({ where: { id, version } });
     if (result.count !== 1) {

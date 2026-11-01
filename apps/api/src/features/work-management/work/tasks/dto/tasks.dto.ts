@@ -34,6 +34,12 @@ export const versionSchema = z
 
 export const fieldsSchema = z
   .object({
+    assigneeAccountId: z.uuid().optional(),
+    managerAccountId: z.uuid().optional(),
+    reassignmentRequired: z.boolean().optional(),
+    reassignmentReason: z.string().max(500).optional(),
+    reassignmentAt: z.iso.datetime().optional(),
+    reassignmentBy: z.uuid().optional(),
     project: z.string().trim().max(1000).optional(),
     priority: z.enum(["Thấp", "Trung bình", "Cao", "Khẩn cấp"]).optional(),
     progress: z.number().int().min(0).max(100).optional(),

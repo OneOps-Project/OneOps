@@ -2,7 +2,7 @@
 
 Hệ thống quản lý công việc dùng **Next.js / React / Tailwind**, **NestJS**, **PostgreSQL / Prisma**. Có bốn module chính: `tenant-system`, `work-management`, `hr-management`, `crm`.
 
-Hiện có công việc/Kanban, dự án, tổng quan, lịch, đề xuất, trao đổi, ghi chú và báo cáo. Các chức năng chưa triển khai vẫn để trống; chưa có SSO/RBAC, chat realtime hay upload tệp.
+Hiện có công việc/Kanban, dự án, tổng quan, lịch, đề xuất, trao đổi, ghi chú và báo cáo. Các chức năng chưa triển khai vẫn để trống; đã có quản trị tài khoản và đăng nhập bằng phiên. Chưa có SSO, RBAC đầy đủ cho toàn bộ nghiệp vụ, chat realtime hay upload tệp.
 
 ## 1. Cài đặt và chạy
 
@@ -14,6 +14,7 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 npm run prepare:dev
 npm run db:migrate
+npm run accounts:bootstrap  # Chỉ lần đầu: nhập thông tin quản trị trong terminal
 npm run dev
 ```
 
@@ -21,6 +22,8 @@ Hai lệnh `cp` dành cho lần đầu; giữ file env đã cấu hình khi pull
 
 - Frontend: [localhost:3002](http://localhost:3002).
 - API: [workspace/summary](http://127.0.0.1:4000/api/v1/workspace/summary).
+- Tài khoản: [/tenant-system/accounts](http://localhost:3002/tenant-system/accounts). Sau khi tạo quản trị bằng lệnh bootstrap, đăng nhập để sử dụng hệ thống. Xem [hướng dẫn tài khoản](docs/ACCOUNTS.md).
+- Nhật ký tập trung: [/tenant-system/checklog](http://localhost:3002/tenant-system/checklog), dành cho Quản trị cấp cao. Xem [hướng dẫn Checklog](docs/CHECKLOG.md).
 - Bộ UI: [/design-system](http://localhost:3002/design-system), [/design-tokens](http://localhost:3002/design-tokens).
 - `apps/api/.env`: `DATABASE_URL`, `HOST`, `PORT`; `apps/web/.env.local`: `API_ORIGIN`. Không commit file env hoặc đưa database URL ra frontend.
 - Dự án dùng PostgreSQL local, không cần Docker. Cấu hình mẫu dùng `127.0.0.1:55432`, database/role `etctha`; nếu máy bạn dùng port hoặc tài khoản khác, cập nhật `DATABASE_URL`. Database không được lưu trong Git; mỗi người chuẩn bị database riêng.
@@ -39,7 +42,7 @@ apps/api/src/
   core/                  # Hạ tầng backend
 packages/database/       # Prisma config, generated client và lịch sử migration
 feature-structure.json   # Danh sách vị trí chức năng, khôi phục thư mục trống
-modules.json             # Registry implementation dữ liệu đã có đủ FE/BE
+modules.json             # Registry implementation dữ liệu, có khai báo phần chỉ BE
 ```
 
 FE và BE dùng cùng `<feature-path>`. Ví dụ phòng ban:
@@ -85,7 +88,7 @@ npm run format:check
 npm run build
 ```
 
-Thay token: thêm `npm run test:tokens`. Thay API/database: thêm `npm run test:api`. Thay UI/route: thêm `npm run test:e2e` sau build.
+Thay token: thêm `npm run test:tokens`. Thay API/database: thêm `npm run test:api`. Thay UI/route: thêm `npm run test:e2e` sau build. Riêng validation/mật khẩu tài khoản: `npm run test:accounts`.
 
 API/E2E chỉ dùng database riêng kết thúc `_test` (mặc định `etctha_test`); chuẩn bị database test sẵn hoặc dùng tài khoản PostgreSQL có quyền tạo database test. E2E dùng web 3117/API 4117, mặc định Google Chrome trên macOS. Với Chromium Playwright: cài bằng `npx playwright install chromium`, chạy `PLAYWRIGHT_USE_BUNDLED=1 npm run test:e2e`; hoặc đặt `PLAYWRIGHT_CHROME_PATH` tới Chrome phù hợp.
 

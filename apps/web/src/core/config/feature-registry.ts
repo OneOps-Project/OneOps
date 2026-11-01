@@ -6,6 +6,8 @@ import { definition as requests } from "@/features/work-management/coordination/
 import { definition as messages } from "@/features/work-management/coordination/internal-chat/index";
 import { definition as notes } from "@/features/work-management/coordination/knowledge-sop/index";
 import { definition as reports } from "@/features/work-management/coordination/workspace-today/reports/index";
+import { definition as accounts } from "@/features/tenant-system/access-control/accounts/index";
+import { definition as checklog } from "@/features/tenant-system/checklog";
 export const modules = [
   dashboard,
   tasks,
@@ -15,6 +17,8 @@ export const modules = [
   messages,
   notes,
   reports,
+  accounts,
+  checklog,
 ];
 const pageAliases: Record<string, string> = {
   "work-management/kanban": "work-management/tasks",

@@ -13,7 +13,11 @@ export async function cleanDatabase() {
     const { default: modules } = await import("../../../modules.json", {
       with: { type: "json" },
     });
-    const tables = modules.map((m) => `"${m.databaseSchema}"."records"`);
+    const tables = modules.flatMap((m) =>
+      (m.tables || ["records"]).map(
+        (table) => `"${m.databaseSchema}"."${table}"`,
+      ),
+    );
     await client.query(`TRUNCATE ${tables.join(", ")} CASCADE`);
   } finally {
     await client.end();

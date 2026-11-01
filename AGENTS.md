@@ -86,18 +86,20 @@ Route nằm trực tiếp trong `apps/web/src/app/<main>/...`; không tạo lạ
 
 Chỉ sửa các điểm dưới đây khi cần để chức năng được giao chạy được; giữ diff nhỏ, nêu rõ trong bàn giao và phối hợp khi nhiều người cùng sửa:
 
-| Điểm                                                            | Khi cần sửa                                                                  |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `apps/web/src/app/<main>/.../page.tsx`                          | Thêm route mỏng, render public page export                                   |
-| `apps/web/src/core/config/feature-registry.ts`                  | Đăng ký menu/định nghĩa trang                                                |
-| `apps/web/src/core/config/feature-forms.ts`                     | Đăng ký form tạo nhanh toàn ứng dụng nếu có                                  |
-| `apps/api/src/features/<main>/<main>.module.ts` và public index | Đăng ký Nest module trong đúng miền                                          |
-| `modules.json`                                                  | Đăng ký implementation dữ liệu hoàn chỉnh; không đăng ký FE-only/BE-only giả |
-| `packages/database/prisma/schema/base.prisma`                   | Bổ sung namespace mới, khớp registry                                         |
-| `packages/database/prisma/migrations/`                          | Thêm migration mới đã kiểm tra SQL                                           |
-| `tests/` và tài liệu cấu trúc                                   | Cập nhật kiểm tra/diễn giải cho hành vi mới                                  |
+| Điểm                                                            | Khi cần sửa                                                      |
+| --------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `apps/web/src/app/<main>/.../page.tsx`                          | Thêm route mỏng, render public page export                       |
+| `apps/web/src/core/config/feature-registry.ts`                  | Đăng ký menu/định nghĩa trang                                    |
+| `apps/web/src/core/config/feature-forms.ts`                     | Đăng ký form tạo nhanh toàn ứng dụng nếu có                      |
+| `apps/api/src/features/<main>/<main>.module.ts` và public index | Đăng ký Nest module trong đúng miền                              |
+| `modules.json`                                                  | Đăng ký implementation và model thực, phân biệt resource/service |
+| `packages/database/prisma/schema/base.prisma`                   | Bổ sung namespace mới, khớp registry                             |
+| `packages/database/prisma/migrations/`                          | Thêm migration mới đã kiểm tra SQL                               |
+| `tests/` và tài liệu cấu trúc                                   | Cập nhật kiểm tra/diễn giải cho hành vi mới                      |
 
-`modules.json` hiện kiểm tra bộ artifact FE+BE và một model/namespace cho từng record. Nếu nhiệm vụ cần BE-only, nhiều model hoặc dạng khác, thiết kế cập nhật registry/checker tương ứng trong phạm vi được giao; không tạo file giả hoặc tắt kiểm tra để vượt qua. Không tự mở rộng `feature-structure.json`, sửa lockfile/dependency hay token chung nếu nhiệm vụ không cần.
+`modules.json` hỗ trợ CRUD hiện hữu, `kind: "resource"` có FE/BE và `kind: "service"` chỉ có BE. `models`/`tables` khai báo đầy đủ model/bảng sở hữu; một namespace thuộc một implementation. Không tạo FE/controller giả cho service chỉ có BE hoặc tắt checker để vượt qua. Khi thêm model, cập nhật registry và migration tương ứng. Không tự mở rộng `feature-structure.json`, sửa lockfile/dependency hay token chung nếu nhiệm vụ không cần.
+
+Tài khoản đã có xác thực bằng cookie thật, quyền quản trị tối thiểu và checklog. Đọc `docs/ACCOUNTS.md` trước khi sửa các tích hợp liên quan. `tenant-system.accounts.module.ts` là composition kết nối public service của Tenant, HR và Work; leaf feature vẫn không import chéo. Các API nghiệp vụ cần đăng nhập; test dùng fixture đăng nhập trên database `_test`. Không thêm bypass xác thực cho development hoặc tạo tài khoản mặc định.
 
 ## 7. Kiểm tra và bàn giao
 

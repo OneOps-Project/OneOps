@@ -31,7 +31,7 @@ Hai nhánh calendar/reports là phần mở rộng bảo toàn chức năng có 
 - core/auth, events, realtime và các hạ tầng chưa có chỉ là thư mục, không có implementation giả.
 - prisma/seed và seed của từng feature chưa có dữ liệu nên không tạo seed chạy rỗng.
 
-Không tạo file controller/service/page/types/seed rỗng hoặc endpoint trả dữ liệu giả. Các main Nest module rỗng của HR/CRM chỉ là composition container theo file mẫu, không cung cấp API nghiệp vụ. Route nằm trực tiếp dưới `app`; shell được ghép trong layout gốc, chưa có authentication guard.
+Không tạo file controller/service/page/types/seed rỗng hoặc endpoint trả dữ liệu giả. CRM vẫn là composition container; HR đã có hồ sơ tối thiểu phục vụ Accounts. Route nằm trực tiếp dưới `app`; shell được ghép trong layout gốc, có session guard và quyền quản trị tài khoản tối thiểu.
 
 ## Đổi cấu trúc bên trong
 

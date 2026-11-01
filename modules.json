@@ -70,5 +70,77 @@
     "model": "WorkReport",
     "databaseSchema": "work_reports",
     "schema": "apps/api/src/features/work-management/coordination/workspace-today/reports/prisma/reports.prisma"
+  },
+  {
+    "name": "accounts",
+    "feature": "tenant-system/access-control/accounts",
+    "route": "accounts",
+    "webRoute": "/tenant-system/accounts",
+    "model": "UserAccount",
+    "models": ["UserAccount", "AccountGroup", "AccountGroupMember"],
+    "tables": ["accounts", "groups", "group_members"],
+    "databaseSchema": "tenant_accounts",
+    "schema": "apps/api/src/features/tenant-system/access-control/accounts/prisma/accounts.prisma",
+    "kind": "resource"
+  },
+  {
+    "name": "tenant-auth",
+    "feature": "tenant-system/access-control/tenant-auth",
+    "route": "auth",
+    "webRoute": null,
+    "model": "AuthSession",
+    "models": ["AuthSession", "AuthAttempt"],
+    "tables": ["sessions", "attempts"],
+    "databaseSchema": "tenant_auth",
+    "schema": "apps/api/src/features/tenant-system/access-control/tenant-auth/prisma/tenant-auth.prisma",
+    "kind": "service"
+  },
+  {
+    "name": "roles-permissions",
+    "feature": "tenant-system/access-control/roles-permissions",
+    "route": "account-permissions",
+    "webRoute": null,
+    "model": "AccountPermission",
+    "models": ["AccountPermission"],
+    "tables": ["account_permissions"],
+    "databaseSchema": "tenant_permissions",
+    "schema": "apps/api/src/features/tenant-system/access-control/roles-permissions/prisma/roles-permissions.prisma",
+    "kind": "service"
+  },
+  {
+    "name": "checklog",
+    "feature": "tenant-system/checklog",
+    "route": "checklog",
+    "webRoute": "/tenant-system/checklog",
+    "model": "AuditEntry",
+    "models": ["AuditEntry"],
+    "tables": ["entries"],
+    "databaseSchema": "tenant_audit",
+    "schema": "apps/api/src/features/tenant-system/checklog/prisma/checklog.prisma",
+    "kind": "resource"
+  },
+  {
+    "name": "employee-directory",
+    "feature": "hr-management/employees/employee-directory",
+    "route": "employees",
+    "webRoute": null,
+    "model": "EmployeeProfile",
+    "models": ["EmployeeProfile"],
+    "tables": ["employees"],
+    "databaseSchema": "hr_employees",
+    "schema": "apps/api/src/features/hr-management/employees/employee-directory/prisma/employee-directory.prisma",
+    "kind": "service"
+  },
+  {
+    "name": "notifications",
+    "feature": "work-management/coordination/notifications",
+    "route": "account-notifications",
+    "webRoute": null,
+    "model": "AccountNotification",
+    "models": ["AccountNotification"],
+    "tables": ["account_notifications"],
+    "databaseSchema": "work_notifications",
+    "schema": "apps/api/src/features/work-management/coordination/notifications/prisma/notifications.prisma",
+    "kind": "service"
   }
 ]

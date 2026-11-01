@@ -1,0 +1,9 @@
+model AccountPermission {
+ accountId String @id @db.Uuid
+ superAdmin Boolean @default(false)
+ manageAccounts Boolean @default(false)
+ version Int @default(1)
+ updatedAt DateTime @updatedAt
+ @@map("account_permissions")
+ @@schema("tenant_permissions")
+}
