@@ -45,6 +45,7 @@ for (const [workspace, port] of [
   ];
   const childEnv = {
     ...process.env,
+    NODE_ENV: production ? "production" : "development",
     PORT: port,
     API_ORIGIN:
       process.env.API_ORIGIN ||

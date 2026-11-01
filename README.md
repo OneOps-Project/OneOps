@@ -24,6 +24,7 @@ Hai lệnh `cp` dành cho lần đầu; giữ file env đã cấu hình khi pull
 - Bộ UI: [/design-system](http://localhost:3002/design-system), [/design-tokens](http://localhost:3002/design-tokens).
 - `apps/api/.env`: `DATABASE_URL`, `HOST`, `PORT`; `apps/web/.env.local`: `API_ORIGIN`. Không commit file env hoặc đưa database URL ra frontend.
 - Dự án dùng PostgreSQL local, không cần Docker. Cấu hình mẫu dùng `127.0.0.1:55432`, database/role `etctha`; nếu máy bạn dùng port hoặc tài khoản khác, cập nhật `DATABASE_URL`. Database không được lưu trong Git; mỗi người chuẩn bị database riêng.
+- Để thử CRUD organization với database mock rỗng sau mỗi lần khởi động, tạo riêng database PostgreSQL có tên kết thúc `_mock`, rồi chạy `MOCK_DATABASE_URL=<connection-to-your-dedicated-mock-db> npm run dev:mock`. Lệnh này reset database mock trước khi chạy dev; không trỏ `MOCK_DATABASE_URL` vào database dev đang dùng hoặc production. `npm run dev` thông thường không reset dữ liệu.
 
 Sau khi pull: `npm ci` → `npm run prepare:dev` → đọc migration mới → `npm run db:migrate` trên database dev → `npm run dev`. `db:migrate` áp dụng migration đã có; khi phát triển model mới, dùng `npm run db:dev -- --name <ten_migration>` trên database riêng và review SQL trước khi áp dụng. Không reset database hoặc chấp nhận DROP bảng ngoài phạm vi.
 

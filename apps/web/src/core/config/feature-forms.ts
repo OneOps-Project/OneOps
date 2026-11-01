@@ -5,6 +5,7 @@ import { CreateForm as requests } from "@/features/work-management/coordination/
 import { CreateForm as messages } from "@/features/work-management/coordination/internal-chat/index";
 import { CreateForm as notes } from "@/features/work-management/coordination/knowledge-sop/index";
 import { CreateForm as reports } from "@/features/work-management/coordination/workspace-today/reports/index";
+import { CreateForm as departmentsTeams } from "@/features/hr-management/organization/departments-teams/index";
 export const moduleForms = {
   "work-management/tasks": tasks,
   "work-management/projects": projects,
@@ -13,4 +14,5 @@ export const moduleForms = {
   "work-management/internal-chat": messages,
   "work-management/knowledge-sop": notes,
   "work-management/reports": reports,
+  "hr-management/organization/departments": departmentsTeams,
 };

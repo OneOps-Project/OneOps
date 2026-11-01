@@ -6,6 +6,7 @@ import { definition as requests } from "@/features/work-management/coordination/
 import { definition as messages } from "@/features/work-management/coordination/internal-chat/index";
 import { definition as notes } from "@/features/work-management/coordination/knowledge-sop/index";
 import { definition as reports } from "@/features/work-management/coordination/workspace-today/reports/index";
+import { definition as departmentsTeams } from "@/features/hr-management/organization/departments-teams/index";
 export const modules = [
   dashboard,
   tasks,
@@ -15,9 +16,14 @@ export const modules = [
   messages,
   notes,
   reports,
+  departmentsTeams,
 ];
 const pageAliases: Record<string, string> = {
   "work-management/kanban": "work-management/tasks",
 };
 export const getModule = (id: string) =>
-  modules.find((module) => module.id === (pageAliases[id] || id));
+  modules.find((module) => module.id === (pageAliases[id] || id)) ??
+  (id.startsWith("hr-management/organization/departments/") ||
+  id.startsWith("hr-management/organization/teams/")
+    ? departmentsTeams
+    : undefined);
