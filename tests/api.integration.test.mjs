@@ -1,7 +1,10 @@
 import test, { before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import modules from "../modules.json" with { type: "json" };
+import allModules from "../modules.json" with { type: "json" };
+import { seedTestIdentity, testAdmin } from "../apps/api/test/identity.mjs";
+const modules = allModules.filter((module) => !module.kind);
+let cookie = "";
 import { databaseUrl, cleanDatabase } from "../apps/api/test/database.mjs";
 let app, origin, createApp;
 const statuses = {
@@ -25,7 +28,7 @@ const input = (module = "tasks", patch = {}) => ({
 async function request(route, method = "GET", body) {
   const response = await fetch(`${origin}/api/v1${route}`, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Cookie: cookie },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   return { status: response.status, body: await response.json() };
@@ -53,7 +56,20 @@ before(async () => {
 after(async () => {
   await app?.close();
 });
-beforeEach(cleanDatabase);
+beforeEach(async () => {
+  await cleanDatabase();
+  await seedTestIdentity();
+  const response = await fetch(`${origin}/api/v1/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: testAdmin.username,
+      password: testAdmin.password,
+    }),
+  });
+  assert.equal(response.status, 201);
+  cookie = response.headers.get("set-cookie").split(";")[0];
+});
 test("eight implementations own separate CRUD APIs, codes, records and namespaces", async () => {
   for (const module of modules) {
     const created = await request(

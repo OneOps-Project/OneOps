@@ -220,35 +220,53 @@ for (const module of modules) {
   for (const [set, value, label] of [
     [namespaces, module.databaseSchema, "namespace"],
     [routes, module.route, "API route"],
-    [models, module.model, "model"],
   ]) {
+    if (value === null || value === undefined) continue;
     if (set.has(value)) failures.push(`Duplicate ${label}: ${value}`);
     set.add(value);
+  }
+  const ownedModels = module.models || [module.model];
+  for (const model of ownedModels) {
+    if (models.has(model)) failures.push(`Duplicate model: ${model}`);
+    models.add(model);
   }
   const backend = `apps/api/src/features/${module.feature}`,
     frontend = `apps/web/src/features/${module.feature}`;
   for (const file of [
-    `${backend}/${module.name}.controller.ts`,
+    ...(module.kind === "service"
+      ? []
+      : [`${backend}/${module.name}.controller.ts`]),
     `${backend}/${module.name}.service.ts`,
     `${backend}/${module.name}.repository.ts`,
     `${backend}/${module.name}.module.ts`,
     `${backend}/dto/${module.name}.dto.ts`,
     module.schema,
-    `${frontend}/components/page.tsx`,
-    `${frontend}/constants.ts`,
-    `${frontend}/types.ts`,
-    `${frontend}/api/client.ts`,
+    ...(module.kind === "service"
+      ? []
+      : [
+          `${frontend}/components/page.tsx`,
+          `${frontend}/constants.ts`,
+          `${frontend}/types.ts`,
+          `${frontend}/api/client.ts`,
+        ]),
   ])
     if (!(await exists(file))) failures.push(`Missing owned artifact: ${file}`);
   const schema = await fs.readFile(path.join(root, module.schema), "utf8");
   if (!schema.includes(`@@schema("${module.databaseSchema}")`))
     failures.push(`${module.name}: namespace mismatch`);
+  for (const model of ownedModels)
+    if (!new RegExp(`\\bmodel\\s+${model}\\s*\\{`).test(schema))
+      failures.push(`${module.name}: missing owned model ${model}`);
   const repo = await fs.readFile(
     path.join(root, backend, `${module.name}.repository.ts`),
     "utf8",
   );
   for (const [, delegate] of repo.matchAll(/\b(?:tx|this\.db)\.(\w+)/g))
-    if (delegate !== module.model[0].toLowerCase() + module.model.slice(1))
+    if (
+      !ownedModels.some(
+        (model) => delegate === model[0].toLowerCase() + model.slice(1),
+      )
+    )
       failures.push(`${module.name}: foreign delegate ${delegate}`);
 }
 const base = await fs.readFile(

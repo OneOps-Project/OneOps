@@ -1,3 +1,4 @@
+import { AccountSessionBoundary } from "@/features/tenant-system/access-control/accounts";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ApplicationProviders } from "@/core/context/providers";
@@ -23,7 +24,9 @@ export default function RootLayout({
     <html lang="vi" className={inter.variable}>
       <body>
         <ApplicationProviders>
-          <AppShell>{children}</AppShell>
+          <AccountSessionBoundary>
+            <AppShell>{children}</AppShell>
+          </AccountSessionBoundary>
         </ApplicationProviders>
       </body>
     </html>

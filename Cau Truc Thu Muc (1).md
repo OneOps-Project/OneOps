@@ -13,7 +13,8 @@ OneOps3/
 │   ├── api/                                                                         # Backend NestJS
 │   │   ├── src/                                                                     # Mã nguồn backend
 │   │   │   ├── core/                                                                # Hạ tầng backend; không chứa nghiệp vụ
-│   │   │   │   ├── auth/                                                            # Hạ tầng xác thực [trống]
+│   │   │   │   ├── auth/                                                            # Session guard và policy port hạ tầng
+│   │   │   │   │   └── session.guard.ts
 │   │   │   │   ├── config/                                                          # Cấu hình hạ tầng [trống]
 │   │   │   │   ├── database/                                                        # Kết nối và vòng đời Prisma/PostgreSQL
 │   │   │   │   │   └── database.module.ts
@@ -41,7 +42,7 @@ OneOps3/
 │   │   │   │   │   │   └── leads-customers/                                         # Khách hàng tiềm năng và hồ sơ khách hàng [trống]
 │   │   │   │   │   ├── crm.module.ts                                                # Ghép các chức năng đã có; không tạo endpoint giả
 │   │   │   │   │   └── index.ts                                                     # Public exports cho composition
-│   │   │   │   ├── hr-management/                                                   # Tổ chức nhân sự, chấm công và nghỉ phép; chưa có nghiệp vụ
+│   │   │   │   ├── hr-management/                                                   # Tổ chức nhân sự; đã có hồ sơ tối thiểu phục vụ tài khoản
 │   │   │   │   │   ├── attendance/                                                  # Ca làm, điểm danh, quân số và báo cáo công
 │   │   │   │   │   │   ├── attendance-reports/                                      # Tổng hợp công và báo cáo chấm công [trống]
 │   │   │   │   │   │   ├── checkin-explanations/                                    # Gửi và duyệt giải trình điểm danh [trống]
@@ -49,7 +50,7 @@ OneOps3/
 │   │   │   │   │   │   ├── shifts-schedules/                                        # Ca làm và lịch làm việc của nhân viên [trống]
 │   │   │   │   │   │   └── workforce-board/                                         # Theo dõi quân số và trạng thái nhân sự [trống]
 │   │   │   │   │   ├── employees/                                                   # Hồ sơ nhân viên và công suất làm việc
-│   │   │   │   │   │   ├── employee-directory/                                      # Hồ sơ, danh bạ và bố trí nhân sự [trống]
+│   │   │   │   │   │   ├── employee-directory/                                      # Hồ sơ, danh bạ và bố trí nhân sự [có mã hiện hữu]
 │   │   │   │   │   │   └── resource-capacity/                                       # Công suất và khả năng nhận việc của nhân sự [trống]
 │   │   │   │   │   ├── leaves/                                                      # Đơn nghỉ phép và xét duyệt
 │   │   │   │   │   │   ├── leave-approvals/                                         # Xét duyệt đơn nghỉ và kết quả xử lý [trống]
@@ -61,24 +62,25 @@ OneOps3/
 │   │   │   │   │   └── index.ts                                                     # Public exports cho composition
 │   │   │   │   ├── tenant-system/                                                   # Quản trị doanh nghiệp, tài khoản và tích hợp
 │   │   │   │   │   ├── access-control/                                              # Danh tính đăng nhập, quyền và quản trị truy cập
-│   │   │   │   │   │   ├── accounts/                                                # Tài khoản và phiên đăng nhập [trống]
-│   │   │   │   │   │   ├── roles-permissions/                                       # Vai trò, quyền và phạm vi dữ liệu [trống]
-│   │   │   │   │   │   └── tenant-auth/                                             # Đăng nhập và xác thực trong doanh nghiệp [trống]
+│   │   │   │   │   │   ├── accounts/                                                # Tài khoản và phiên đăng nhập [có mã hiện hữu]
+│   │   │   │   │   │   ├── roles-permissions/                                       # Vai trò, quyền và phạm vi dữ liệu [có mã hiện hữu]
+│   │   │   │   │   │   └── tenant-auth/                                             # Đăng nhập và xác thực trong doanh nghiệp [có mã hiện hữu]
 │   │   │   │   │   ├── automation-hub/                                              # Tích hợp bên ngoài, tự động hóa và AI
 │   │   │   │   │   │   ├── ai-copilot/                                              # Trợ lý AI hỗ trợ thao tác nghiệp vụ [trống]
 │   │   │   │   │   │   ├── external-integrations/                                   # Kết nối Google, GitHub, Zalo, email… [trống]
 │   │   │   │   │   │   └── workflow-rules/                                          # Quy tắc tự động hóa và luồng xử lý [trống]
-│   │   │   │   │   ├── checklog/                                                    # Nhật ký hoạt động và truy vết kiểm toán [trống]
+│   │   │   │   │   ├── checklog/                                                    # Nhật ký hoạt động và truy vết kiểm toán [có mã hiện hữu]
 │   │   │   │   │   ├── organization/                                                # Thông tin doanh nghiệp và chính sách vận hành
 │   │   │   │   │   │   ├── company-profile/                                         # Thông tin doanh nghiệp; chưa triển khai [trống]
 │   │   │   │   │   │   └── work-policies/                                           # Giờ làm, IP văn phòng, ngày lễ và chính sách [trống]
 │   │   │   │   │   ├── index.ts                                                     # Public exports cho composition
+│   │   │   │   │   ├── tenant-system.accounts.module.ts
 │   │   │   │   │   └── tenant-system.module.ts                                      # Ghép các chức năng đã có; không tạo endpoint giả
 │   │   │   │   └── work-management/                                                 # Quản lý công việc, phối hợp và dự án
 │   │   │   │       ├── coordination/                                                # Điều phối, trao đổi và không gian làm việc
 │   │   │   │       │   ├── internal-chat/                                           # Trao đổi nội bộ; hiện là chủ đề/bình luận, chưa realtime [có mã hiện hữu]
 │   │   │   │       │   ├── knowledge-sop/                                           # Ghi chú/tri thức; chưa có quy trình SOP đầy đủ [có mã hiện hữu]
-│   │   │   │       │   ├── notifications/                                           # Thông báo trong ứng dụng, nhắc hạn và đa kênh [trống]
+│   │   │   │       │   ├── notifications/                                           # Thông báo trong ứng dụng, nhắc hạn và đa kênh [có mã hiện hữu]
 │   │   │   │       │   ├── tickets-approvals/                                       # Đề xuất và cập nhật kết quả xử lý; chưa có RBAC [có mã hiện hữu]
 │   │   │   │       │   └── workspace-today/                                         # Dashboard, tiện ích và tổng quan công việc [có mã hiện hữu]
 │   │   │   │       │       ├── calendar/                                            # Lịch họp, sự kiện và thời gian tập trung hiện có [có mã hiện hữu]
@@ -115,13 +117,19 @@ OneOps3/
 │   │   │   ├── bootstrap.ts                                                         # Khởi tạo Nest, prefix API và xử lý lỗi
 │   │   │   └── main.ts                                                              # Điểm chạy backend
 │   │   ├── test/                                                                    # Hỗ trợ kiểm thử với database riêng
-│   │   │   └── database.mjs
+│   │   │   ├── database.mjs
+│   │   │   └── identity.mjs
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   └── web/                                                                         # Frontend Next.js 16
 │       ├── public/                                                                  # Font và các file public/download
 │       ├── src/                                                                     # Mã nguồn frontend
 │       │   ├── app/                                                                 # Định tuyến và layout theo quy ước Next.js
+│       │   │   ├── (auth)/                                                          # Trang xác thực [trống]
+│       │   │   ├── (error-pages)/                                                   # Trang lỗi chuyên biệt [trống]
+│       │   │   ├── api/                                                             # HTTP proxy chuyển request tới NestJS
+│       │   │   │   └── [...path]/
+│       │   │   │       └── route.ts
 │       │   │   ├── crm/
 │       │   │   ├── design-system/
 │       │   │   │   └── page.tsx
@@ -131,6 +139,10 @@ OneOps3/
 │       │   │   │   ├── attendance/
 │       │   │   │   └── leaves/
 │       │   │   ├── tenant-system/
+│       │   │   │   ├── accounts/
+│       │   │   │   │   └── page.tsx
+│       │   │   │   └── checklog/                                                     # Trang nhật ký tập trung
+│       │   │   │       └── page.tsx
 │       │   │   ├── work-management/
 │       │   │   │   ├── calendar/
 │       │   │   │   │   └── page.tsx
@@ -149,14 +161,9 @@ OneOps3/
 │       │   │   │   │   └── page.tsx
 │       │   │   │   └── tickets-approvals/
 │       │   │   │       └── page.tsx
-│       │   │   ├── page.tsx
-│       │   │   ├── (auth)/                                                          # Trang xác thực [trống]
-│       │   │   ├── (error-pages)/                                                   # Trang lỗi chuyên biệt [trống]
-│       │   │   ├── api/                                                             # HTTP proxy chuyển request tới NestJS
-│       │   │   │   └── [...path]/
-│       │   │   │       └── route.ts
-│       │   │   ├── layout.tsx                                                       # Layout gốc, font, CSS nền, providers và AppShell
-│       │   │   └── not-found.tsx                                                    # Trang 404 gốc của Next.js
+│       │   │   ├── layout.tsx                                                       # Font, CSS, providers, session boundary và AppShell
+│       │   │   ├── not-found.tsx                                                    # Trang 404 gốc của Next.js
+│       │   │   └── page.tsx
 │       │   ├── core/                                                                # Hạ tầng, khung giao diện và công cụ UI
 │       │   │   ├── config/                                                          # Đăng ký menu, feature và form công khai
 │       │   │   │   ├── feature-forms.ts
@@ -202,7 +209,7 @@ OneOps3/
 │       │   │   │   └── presales/                                                    # Tiếp nhận và tìm hiểu khách hàng tiềm năng
 │       │   │   │       ├── discovery-briefs/                                        # Khảo sát nhu cầu và tóm tắt yêu cầu khách hàng [trống]
 │       │   │   │       └── leads-customers/                                         # Khách hàng tiềm năng và hồ sơ khách hàng [trống]
-│       │   │   ├── hr-management/                                                   # Tổ chức nhân sự, chấm công và nghỉ phép; chưa có nghiệp vụ
+│       │   │   ├── hr-management/                                                   # Tổ chức nhân sự; đã có hồ sơ tối thiểu phục vụ tài khoản
 │       │   │   │   ├── attendance/                                                  # Ca làm, điểm danh, quân số và báo cáo công
 │       │   │   │   │   ├── attendance-reports/                                      # Tổng hợp công và báo cáo chấm công [trống]
 │       │   │   │   │   ├── checkin-explanations/                                    # Gửi và duyệt giải trình điểm danh [trống]
@@ -220,14 +227,14 @@ OneOps3/
 │       │   │   │       └── positions-grades/                                        # Chức danh, chức vụ và cấp bậc nhân sự [trống]
 │       │   │   ├── tenant-system/                                                   # Quản trị doanh nghiệp, tài khoản và tích hợp
 │       │   │   │   ├── access-control/                                              # Danh tính đăng nhập, quyền và quản trị truy cập
-│       │   │   │   │   ├── accounts/                                                # Tài khoản và phiên đăng nhập [trống]
+│       │   │   │   │   ├── accounts/                                                # Tài khoản và phiên đăng nhập [có mã hiện hữu]
 │       │   │   │   │   ├── roles-permissions/                                       # Vai trò, quyền và phạm vi dữ liệu [trống]
 │       │   │   │   │   └── tenant-auth/                                             # Đăng nhập và xác thực trong doanh nghiệp [trống]
 │       │   │   │   ├── automation-hub/                                              # Tích hợp bên ngoài, tự động hóa và AI
 │       │   │   │   │   ├── ai-copilot/                                              # Trợ lý AI hỗ trợ thao tác nghiệp vụ [trống]
 │       │   │   │   │   ├── external-integrations/                                   # Kết nối Google, GitHub, Zalo, email… [trống]
 │       │   │   │   │   └── workflow-rules/                                          # Quy tắc tự động hóa và luồng xử lý [trống]
-│       │   │   │   ├── checklog/                                                    # Nhật ký hoạt động và truy vết kiểm toán [trống]
+│       │   │   │   ├── checklog/                                                    # Tra cứu nhật ký tập trung và chi tiết sự kiện [có mã hiện hữu]
 │       │   │   │   └── organization/                                                # Thông tin doanh nghiệp và chính sách vận hành
 │       │   │   │       ├── company-profile/                                         # Thông tin doanh nghiệp; chưa triển khai [trống]
 │       │   │   │       └── work-policies/                                           # Giờ làm, IP văn phòng, ngày lễ và chính sách [trống]
@@ -287,12 +294,13 @@ OneOps3/
 ├── tests/                                                                           # API integration, browser và design token tests
 ├── tokens/                                                                          # Nguồn design tokens và tài liệu thiết kế
 ├── feature-structure.json                                                           # Danh mục 4 nhóm/39 chức năng; dùng dựng thư mục
-├── modules.json                                                                     # Ánh xạ 8 implementation dữ liệu, route và model
+├── modules.json                                                                     # Ánh xạ 14 implementation dữ liệu, route và model
 ├── package.json                                                                     # Workspace và các lệnh điều phối dự án
 ├── package-lock.json                                                                # Khóa phiên bản dependency
 ├── playwright.config.ts
 ├── eslint.config.mjs
 ├── AGENTS.md                                                                        # Quy tắc làm việc và ranh giới module
+├── agent.md
 ├── Cau Truc Thu Muc (1).md                                                          # Tài liệu cây thư mục hiện tại
 └── README.md
 ```
@@ -301,7 +309,7 @@ OneOps3/
 
 - Mỗi chức năng đã triển khai tự sở hữu component, hook, API client, DTO/types và model; không dùng repository hoặc implementation nội bộ của chức năng khác.
 - BE chưa có thì để trống các thư mục prisma/dto/entities/guards/middlewares/listeners; FE chưa có thì để trống components/hooks/api/actions. Không tạo controller/service/page/seed chạy rỗng.
-- Core chỉ chứa hạ tầng và composition. Các main Nest module chưa có chức năng hiện chỉ là container, chưa có API nghiệp vụ; route nằm trực tiếp dưới `app`, chưa bổ sung xác thực/RBAC.
+- Core chỉ chứa hạ tầng và composition. Các main Nest module chưa có chức năng hiện chỉ là container, chưa có API nghiệp vụ; route trực tiếp dưới app; có xác thực và quyền quản trị tài khoản tối thiểu.
 - `packages/database/prisma/schema/base.prisma` chỉ khai báo datasource/generator. Link `schema/features` đọc model gốc tại BE, không nhân đôi schema; generated client không sửa tay.
 - Git không lưu thư mục rỗng. `feature-structure.json` và `npm run structure:prepare` tái tạo các nhánh trống sau checkout/install; không cần file placeholder.
 - Các thư mục phụ thuộc/vận hành `.local`, `node_modules`, `.next`, `dist`, `test-results` và `playwright-report` không được triển khai chi tiết trong tài liệu này.

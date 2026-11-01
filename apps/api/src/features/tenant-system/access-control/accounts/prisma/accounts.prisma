@@ -1,0 +1,43 @@
+model UserAccount {
+  id String @id @default(uuid()) @db.Uuid
+  employeeId String @unique @db.Uuid
+  employeeCode String @db.VarChar(100)
+  displayName String @db.VarChar(200)
+  username String @unique @db.VarChar(64)
+  email String @unique @db.VarChar(254)
+  role String @default("EMPLOYEE") @db.VarChar(20)
+  status String @default("ACTIVE") @db.VarChar(20)
+  passwordHash String @db.VarChar(300)
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  memberships AccountGroupMember[]
+  ownedGroups AccountGroup[]
+  @@index([status, role])
+  @@map("accounts")
+  @@schema("tenant_accounts")
+}
+model AccountGroup {
+  id String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(100)
+  directory String @unique @db.VarChar(64)
+  description String @default("") @db.VarChar(2000)
+  ownerId String @db.Uuid
+  owner UserAccount @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  members AccountGroupMember[]
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("groups")
+  @@schema("tenant_accounts")
+}
+model AccountGroupMember {
+  groupId String @db.Uuid
+  accountId String @db.Uuid
+  group AccountGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  account UserAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  @@id([groupId, accountId])
+  @@index([accountId])
+  @@map("group_members")
+  @@schema("tenant_accounts")
+}

@@ -1,3 +1,4 @@
+import { NotificationsModule } from "./coordination/notifications/index.js";
 import { Module } from "@nestjs/common";
 import { WorkspaceTodayModule } from "./coordination/workspace-today/index.js";
 import { TasksModule } from "./work/tasks/index.js";
@@ -19,6 +20,8 @@ import { WorkspaceInsightsModule } from "./work-management.insights.module.js";
     KnowledgeSopModule,
     ReportsModule,
     WorkspaceInsightsModule,
+    NotificationsModule,
   ],
+  exports: [TasksModule, NotificationsModule],
 })
 export class WorkManagementModule {}

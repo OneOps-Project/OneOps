@@ -49,8 +49,10 @@ export function ModulePage({
     status === "all" ? "" : status || params.get("status") || "";
   const filtered = records.filter(
     (record) =>
+      (params.get("reassignment") !== "1" ||
+        record.fields.reassignmentRequired === true) &&
       (!effectiveStatus || record.status === effectiveStatus) &&
-      `${record.code} ${record.name} ${record.assignee} ${record.note} ${Object.values(record.fields).join(" ")}`
+      `${record.id} ${record.code} ${record.name} ${record.assignee} ${record.note} ${Object.values(record.fields).join(" ")}`
         .toLocaleLowerCase("vi")
         .includes(query.trim().toLocaleLowerCase("vi")),
   );
@@ -200,6 +202,11 @@ export function ModulePage({
                               onClick={() => setDetail(record)}
                             >
                               {record.name}
+                              {record.fields.reassignmentRequired && (
+                                <span className="ml-2 text-xs text-warning">
+                                  Cần giao lại
+                                </span>
+                              )}
                             </button>
                           </td>
                           <td>

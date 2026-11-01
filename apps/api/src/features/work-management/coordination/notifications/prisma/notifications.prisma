@@ -1,0 +1,12 @@
+model AccountNotification {
+ id String @id @default(uuid()) @db.Uuid
+ recipientId String @db.Uuid
+ accountId String @db.Uuid
+ message String @db.VarChar(1000)
+ taskIds Json
+ readAt DateTime?
+ createdAt DateTime @default(now())
+ @@index([recipientId, createdAt])
+ @@map("account_notifications")
+ @@schema("work_notifications")
+}

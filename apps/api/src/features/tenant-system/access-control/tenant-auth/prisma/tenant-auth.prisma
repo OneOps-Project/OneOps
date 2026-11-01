@@ -1,0 +1,19 @@
+model AuthSession {
+ id String @id @default(uuid()) @db.Uuid
+ tokenHash String @unique @db.VarChar(64)
+ accountId String @db.Uuid
+ accountVersion Int @default(1)
+ expiresAt DateTime
+ createdAt DateTime @default(now())
+ @@index([accountId])
+ @@index([expiresAt])
+ @@map("sessions")
+ @@schema("tenant_auth")
+}
+model AuthAttempt {
+ key String @id @db.VarChar(64)
+ failures Int @default(0)
+ updatedAt DateTime @updatedAt
+ @@map("attempts")
+ @@schema("tenant_auth")
+}

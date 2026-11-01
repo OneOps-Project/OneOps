@@ -1,0 +1,123 @@
+.page {
+  padding: var(--panel-space);
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  min-width: 0;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--panel-space);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--type-body-size);
+}
+.table th {
+  background: var(--subtle);
+  color: var(--foreground-muted);
+  font-weight: var(--weight-medium);
+}
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.table td {
+  min-height: var(--row-height);
+}
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.field {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--type-label-size);
+}
+.form {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+.status {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--type-caption-size);
+  white-space: nowrap;
+}
+.active {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.locked {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.history {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+.history article {
+  border-left: 2px solid var(--line);
+  padding-left: var(--space-4);
+}
+.history pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--type-caption-size);
+  background: var(--subtle);
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+}
+.login {
+  width: calc(100% - var(--space-8));
+  max-width: 28rem;
+  margin: var(--space-8) auto;
+  padding: var(--panel-space);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+.empty {
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--foreground-muted);
+}
+@media (max-width: 640px) {
+  .toolbar > * {
+    flex: 1 1 100%;
+  }
+  .table th,
+  .table td {
+    padding: var(--space-3);
+  }
+}

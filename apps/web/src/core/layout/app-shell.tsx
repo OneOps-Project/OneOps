@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AccountSessionSummary } from "@/features/tenant-system/access-control/accounts";
 import { navigationIcons, switchApp, vi } from "@/icons";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -156,8 +157,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </button>
           {account && (
             <div className="account-popover">
-              <strong>Phiên làm việc cục bộ</strong>
-              <p>Chưa kết nối tài khoản hệ thống.</p>
+              <AccountSessionSummary />
               <div className="mb-4">
                 <AppearanceControls />
               </div>

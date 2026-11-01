@@ -30,6 +30,16 @@ export class TasksService {
   ) {
     const patch = new SchemaPipe(updateSchema).transform(input);
     const current = await this.repository.get(id, tx);
+    if (patch.fields) patch.fields = { ...current.fields, ...patch.fields };
+    if (patch.assignee !== undefined && patch.assignee !== current.assignee) {
+      patch.fields = {
+        ...current.fields,
+        ...patch.fields,
+        reassignmentRequired: false,
+      };
+      if (patch.fields.assigneeAccountId === current.fields.assigneeAccountId)
+        delete patch.fields.assigneeAccountId;
+    }
     new SchemaPipe(createSchema).transform({
       code: current.code,
       name: current.name,
@@ -44,6 +54,24 @@ export class TasksService {
       ),
     });
     return this.repository.update(id, patch, tx);
+  }
+  bindAccountUsername(
+    account: { id: string; username: string },
+    tx: Transaction,
+  ) {
+    return this.repository.bindAccountUsername(account, tx);
+  }
+  flagAccountTasks(
+    account: {
+      id: string;
+      employeeId: string;
+      employeeCode: string;
+      username: string;
+    },
+    actorId: string,
+    tx: Transaction,
+  ) {
+    return this.repository.flagAccountTasks(account, actorId, tx);
   }
   remove(id: string, version: number, tx?: Transaction) {
     return this.repository.remove(id, version, tx);
