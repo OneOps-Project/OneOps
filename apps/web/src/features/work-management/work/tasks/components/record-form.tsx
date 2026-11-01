@@ -287,7 +287,7 @@ export function RecordForm({
           </div>
         )}
 
-        {/* Độ ưu tiên */}
+        {/* Độ ưu tiên - spec 8.2 */}
         <label>
           Độ ưu tiên
           <Select
@@ -302,53 +302,6 @@ export function RecordForm({
             <option value="Khẩn cấp">Khẩn cấp</option>
           </Select>
         </label>
-
-        {/* Các trường dynamic còn lại (bỏ priority vì đã render riêng) */}
-        <div className="form-grid">
-          {fields
-            .filter((f) => f.key !== "priority")
-            .map((field) => (
-              <label key={field.key}>
-                {field.label}
-                {field.type === "select" ? (
-                  <Select
-                    name={"field:" + field.key}
-                    defaultValue={String(
-                      record?.fields[field.key as keyof RecordDto["fields"]] ??
-                        field.options?.[0] ??
-                        "",
-                    )}
-                  >
-                    {field.options?.map((option) => (
-                      <option key={option}>{option}</option>
-                    ))}
-                  </Select>
-                ) : field.type === "textarea" ? (
-                  <Textarea
-                    name={"field:" + field.key}
-                    maxLength={20000}
-                    rows={4}
-                    defaultValue={String(
-                      record?.fields[field.key as keyof RecordDto["fields"]] ??
-                        "",
-                    )}
-                  />
-                ) : (
-                  <Input
-                    name={"field:" + field.key}
-                    type={field.type}
-                    min={field.type === "number" ? 0 : undefined}
-                    max={field.key === "progress" ? 100 : undefined}
-                    maxLength={1000}
-                    defaultValue={String(
-                      record?.fields[field.key as keyof RecordDto["fields"]] ??
-                        "",
-                    )}
-                  />
-                )}
-              </label>
-            ))}
-        </div>
 
         {/* Mô tả */}
         <label>

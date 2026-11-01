@@ -110,7 +110,7 @@ export class TasksRepository {
           statusHistory: initialStatusHistory,
           reassignmentFlag: { needed: false, reason: "" },
           reassignmentHistory: [],
-          fields: input.fields || {},
+          fields: (input.fields || {}) as any, // Cast để tương thích với Prisma JSON khi dùng passthrough()
           codeKey: input.code.normalize("NFKC").toLocaleLowerCase("vi"),
           date: new Date(input.date + "T00:00:00.000Z"),
         },
@@ -122,7 +122,7 @@ export class TasksRepository {
     input: Partial<RecordInput> & { version: number },
     tx: Transaction = this.db,
   ) {
-    const { version, date, deadline, ...patch } = input;
+    const { version, date, deadline, fields, ...patch } = input;
     const result = await this.table(tx).updateMany({
       where: { id, version },
       data: {
@@ -134,6 +134,7 @@ export class TasksRepository {
         ...(deadline !== undefined
           ? { deadline: deadline ? new Date(deadline) : null }
           : {}),
+        ...(fields !== undefined ? { fields: fields as any } : {}), // Cast để tương thích với Prisma JSON
         version: { increment: 1 },
       },
     });

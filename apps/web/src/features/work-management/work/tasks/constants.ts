@@ -10,7 +10,7 @@ export const definition = {
   label: "Công việc",
   title: "Công việc",
   singular: "công việc",
-  dateLabel: "Hạn hoàn thành",
+  dateLabel: "Ngày tạo", // Đổi từ "Hạn hoàn thành" - field này là ngày tạo task
   personLabel: "Người thực hiện",
   reviewerLabel: "Người kiểm tra",
   tabs: [],
@@ -33,32 +33,14 @@ export const definition = {
     "Hoàn thành": "Đã hoàn thành, xác nhận bởi Người kiểm tra",
     "Đã hủy": "Đã hủy bởi Quản lý",
   },
+  // Chỉ giữ trường "priority" theo đặc tả Mục 8.2
+  // Đã xóa: progress (vi phạm BR-TSK-08), project, startDate, tags (không có trong đặc tả)
   fields: [
     {
-      key: "project",
-      label: "Dự án",
-      type: "text",
-    },
-    {
       key: "priority",
-      label: "Mức ưu tiên",
+      label: "Độ ưu tiên",
       type: "select",
       options: ["Thấp", "Trung bình", "Cao", "Khẩn cấp"],
-    },
-    {
-      key: "progress",
-      label: "Tiến độ (%)",
-      type: "number",
-    },
-    {
-      key: "startDate",
-      label: "Ngày bắt đầu",
-      type: "date",
-    },
-    {
-      key: "tags",
-      label: "Nhãn",
-      type: "text",
     },
   ],
   navigation: {

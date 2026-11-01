@@ -1,0 +1,11 @@
+generator client {
+ provider = "prisma-client-js"
+ output = "../generated"
+ previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+ provider = "postgresql"
+ url = env("DATABASE_URL")
+ schemas = ["work_dashboard", "work_tasks", "work_projects", "work_calendar", "work_requests", "work_messages", "work_notes", "work_reports"]
+}

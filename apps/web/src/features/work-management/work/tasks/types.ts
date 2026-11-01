@@ -56,13 +56,12 @@ export const versionSchema = z
   .object({ version: z.number().int().positive() })
   .strict();
 
+// Chỉ giữ các trường theo đặc tả Mục 8.2 + tính năng mở rộng hợp lệ
+// Đã xóa: project, progress (vi phạm BR-TSK-08), startDate, tags (không có trong đặc tả)
+// Dùng .passthrough() thay vì .strict() để backward compatible với data cũ có các trường đã xóa
 export const fieldsSchema = z
   .object({
-    project: z.string().trim().max(1000).optional(),
     priority: priorityEnum.optional(),
-    progress: z.number().int().min(0).max(100).optional(),
-    startDate: z.union([z.iso.date(), z.literal("")]).optional(),
-    tags: z.string().trim().max(1000).optional(),
     comments: z
       .array(
         z
@@ -89,7 +88,7 @@ export const fieldsSchema = z
       .max(200)
       .optional(),
   })
-  .strict();
+  .passthrough(); // Cho phép các trường cũ (project, progress, startDate, tags) tồn tại trong DB
 
 // Lịch sử trạng thái bất biến
 export const statusHistoryItemSchema = z.object({
@@ -156,10 +155,6 @@ export const reassignSchema = z.object({
 }).strict();
 
 export const validatedCreateSchema = createSchema
-  .refine(
-    (value) => !value.fields.startDate || value.fields.startDate <= value.date,
-    { message: "Hạn hoàn thành phải từ ngày bắt đầu trở đi", path: ["date"] },
-  )
   .refine(
     (value) => !value.reviewer || value.reviewer !== value.assignee,
     { message: "Người kiểm tra phải khác người phụ trách", path: ["reviewer"] },
