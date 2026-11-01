@@ -1,10 +1,13 @@
 "use client";
 import { ModulePage as Content } from "@/features/work-management/work/tasks/components/page";
 import { RecordForm } from "@/features/work-management/work/tasks/components/record-form";
+import { MyTasksPage } from "@/features/work-management/work/tasks/components/my-tasks-page";
+import { FlaggedTasksPage } from "@/features/work-management/work/tasks/components/flagged-tasks-page";
 import {
   WorkspaceProvider,
   Modal,
 } from "@/features/work-management/work/tasks/components/primitives/workspace";
+
 export function ModulePage({
   initialView = "list",
 }: {
@@ -13,7 +16,7 @@ export function ModulePage({
   return (
     <WorkspaceProvider
       renderCreate={(close) => (
-        <Modal title="Tạo mới" onClose={close}>
+        <Modal title="Tạo công việc mới" onClose={close}>
           <RecordForm onClose={close} />
         </Modal>
       )}
@@ -22,6 +25,7 @@ export function ModulePage({
     </WorkspaceProvider>
   );
 }
+
 export function CreateForm({
   onClose,
   onNotify,
@@ -35,3 +39,20 @@ export function CreateForm({
     </WorkspaceProvider>
   );
 }
+
+export function MyTasksView() {
+  return (
+    <WorkspaceProvider renderCreate={() => null}>
+      <MyTasksPage />
+    </WorkspaceProvider>
+  );
+}
+
+export function FlaggedTasksView() {
+  return (
+    <WorkspaceProvider renderCreate={() => null}>
+      <FlaggedTasksPage />
+    </WorkspaceProvider>
+  );
+}
+
