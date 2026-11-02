@@ -16,4 +16,3 @@ export const TASK_EVENT_STATUS_CHANGED = 'task.status_changed';
 export const TASK_EVENT_PROPOSAL_CREATED = 'task.proposal_created';
 export const TASK_EVENT_PROPOSAL_APPROVED = 'task.proposal_approved';
 export const TASK_EVENT_PROPOSAL_REJECTED = 'task.proposal_rejected';
-
