@@ -1,5 +1,5 @@
 import { IsEnum, IsISO8601, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { TaskStatus } from '../tasks.types';
+import { TaskStatus } from '../task-workflow.types';
 
 export class UpdateTaskStatusDto {
   @IsNotEmpty({ message: 'toStatus không được để trống' })

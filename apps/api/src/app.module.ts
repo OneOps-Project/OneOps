@@ -6,7 +6,7 @@ import { PlatformModule } from './modules/platform/platform.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
-import { TasksModule } from './modules/tasks/tasks.module';
+import { WorkManagementModule } from './features/work-management/work-management.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
@@ -21,10 +21,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     // Feature modules — Thêm module mới ở đây
     AuthModule,
     UsersModule,
-    AttendanceModule,  // [Dev 1]
-    TasksModule,       // [Dev 2]
-    ChatModule,        // [Dev 3]
-    NotificationsModule, // [Dev 3]
+    AttendanceModule,      // [Dev 1]
+    WorkManagementModule,  // [Dev 2]
+    ChatModule,            // [Dev 3]
+    NotificationsModule,   // [Dev 3]
   ],
 })
 export class AppModule {}

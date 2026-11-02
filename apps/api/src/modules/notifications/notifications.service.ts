@@ -4,7 +4,7 @@ import { PrismaService } from '../database';
 import { NotificationType } from './notifications.types';
 // Event payload thuộc về module phát (consumer chỉ import type, không import service).
 import type { AttendanceCheckedInEvent } from '../attendance/attendance.types';
-import type { TaskCreatedEvent } from '../tasks/tasks.types';
+import type { TaskCreatedEvent } from '../../features/work-management/work/tasks';
 
 @Injectable()
 export class NotificationsService {
