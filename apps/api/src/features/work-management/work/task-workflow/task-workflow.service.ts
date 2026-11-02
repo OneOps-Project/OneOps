@@ -1,58 +1,36 @@
-import { Injectable, BadRequestException, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { PrismaService } from '../database';
-import { CreateTaskDto, UpdateTaskStatusDto, CreateTaskProposalDto, RejectTaskProposalDto } from './dto';
+import { PrismaService } from '../../../../modules/database';
+import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
+import { CreateTaskProposalDto } from './dto/create-task-proposal.dto';
+import { RejectTaskProposalDto } from './dto/reject-task-proposal.dto';
 import { TaskStateMachine } from './task-state.machine';
-import { TaskStatus } from './tasks.types';
-import { TASK_ERROR_CODES, TASK_EVENT_STATUS_CHANGED } from './tasks.constants';
 import { TaskProposalsService } from './task-proposals.service';
+import { TaskStatus } from './task-workflow.types';
+import { TASK_ERROR_CODES, TASK_EVENT_STATUS_CHANGED } from './task-workflow.constants';
 import type {
   Task,
   TaskHistory,
   TaskStatusTransitionPayload,
   TaskProposalResponse,
   TaskProposalReviewResponse,
-} from './tasks.types';
-import type { JwtPayload, UserRole } from '../platform/types/identity.types';
+} from './task-workflow.types';
+import type { JwtPayload, UserRole } from '../../../../modules/platform/types/identity.types';
 
 @Injectable()
-export class TasksService {
-  private readonly logger = new Logger(TasksService.name);
+export class TaskWorkflowService {
+  private readonly logger = new Logger(TaskWorkflowService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly taskProposalsService: TaskProposalsService,
   ) {}
-
-  async create(createdById: string, dto: CreateTaskDto): Promise<Task> {
-    const deadlineDate = new Date(dto.deadline);
-    if (deadlineDate <= new Date()) {
-      throw new BadRequestException('Deadline phải là thời điểm trong tương lai.');
-    }
-
-    const task = await this.prisma.task.create({
-      data: {
-        title: dto.title,
-        description: dto.description,
-        deadline: deadlineDate,
-        assigneeId: dto.assigneeId,
-        creatorId: createdById,
-        status: TaskStatus.todo,
-      },
-    });
-
-    this.logger.log(`Task created: ${task.id} by ${createdById}`);
-    this.eventEmitter.emit('task.created', {
-      taskId: task.id,
-      taskTitle: task.title,
-      assigneeId: task.assigneeId,
-      assignedById: createdById,
-      deadline: task.deadline,
-    });
-
-    return task;
-  }
 
   async transitionStatus(
     taskId: string,
@@ -97,23 +75,6 @@ export class TasksService {
     return result.task;
   }
 
-  async findAll(query?: { assigneeId?: string; status?: TaskStatus }): Promise<Task[]> {
-    return this.prisma.task.findMany({
-      where: {
-        ...(query?.assigneeId && { assigneeId: query.assigneeId }),
-        ...(query?.status && { status: query.status }),
-      },
-      include: {
-        assignee: { select: { id: true, name: true, avatarUrl: true } },
-      },
-      orderBy: { deadline: 'asc' },
-    });
-  }
-
-  async findById(taskId: string): Promise<Task> {
-    return this.findTaskOrThrow(taskId);
-  }
-
   async createProposal(
     taskId: string,
     user: JwtPayload,
@@ -143,7 +104,10 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) {
       throw new HttpException(
-        { errorCode: TASK_ERROR_CODES.TSK_NOT_FOUND, message: 'Task không tồn tại.' },
+        {
+          errorCode: TASK_ERROR_CODES.TSK_NOT_FOUND,
+          message: 'Task không tồn tại.',
+        },
         HttpStatus.NOT_FOUND,
       );
     }
@@ -157,7 +121,11 @@ export class TasksService {
     dto: UpdateTaskStatusDto,
   ): Promise<{ task: Task; history: TaskHistory }> {
     return this.prisma.$transaction(async (tx) => {
-      const task = await tx.task.update({ where: { id: currentTask.id }, data: updates });
+      const task = await tx.task.update({
+        where: { id: currentTask.id },
+        data: updates,
+      });
+
       const history = await tx.taskHistory.create({
         data: {
           taskId: currentTask.id,
@@ -168,6 +136,7 @@ export class TasksService {
           reason: dto.reason ?? null,
         },
       });
+
       return { task, history };
     });
   }

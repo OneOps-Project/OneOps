@@ -1,6 +1,3 @@
-// [Dev 2] — Module Quản Lý Công Việc & Kanban
-// Sở hữu: Dev 2 | Contract của slice này nằm ngay trong module (không còn package shared-types).
-
 import { TaskStatus, ProposalType, ProposalStatus } from '@prisma/client';
 import type { Task, TaskHistory, TaskLog, TaskProposal, TaskComment } from '@prisma/client';
 
@@ -19,22 +16,6 @@ export interface TaskStatusTransitionPayload {
 }
 
 export type TaskStatusChangedEvent = TaskStatusTransitionPayload;
-
-export interface TaskCreatedEvent {
-  taskId: string;
-  taskTitle: string;
-  assigneeId: string;
-  assignedById: string;
-  deadline: Date;
-}
-
-export interface TaskOverdueEvent {
-  taskId: string;
-  taskTitle: string;
-  assigneeId: string;
-  managerId: string;
-  overdueMinutes: number;
-}
 
 export interface TaskTransitionResponse {
   statusCode: number;
@@ -76,4 +57,3 @@ export interface TaskProposalReviewResponse {
   proposal: TaskProposal;
   task: Task;
 }
-

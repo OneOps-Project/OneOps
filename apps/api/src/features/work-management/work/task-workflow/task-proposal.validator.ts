@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { TASK_ERROR_CODES } from './tasks.constants';
-import { Task, TaskProposal, TaskStatus, ProposalStatus } from './tasks.types';
-import type { JwtPayload } from '../platform/types/identity.types';
+import { TASK_ERROR_CODES } from './task-workflow.constants';
+import { Task, TaskProposal, TaskStatus, ProposalStatus } from './task-workflow.types';
+import type { JwtPayload } from '../../../../modules/platform/types/identity.types';
 
 export class TaskProposalValidator {
   static assertCanPropose(task: Task, user: JwtPayload): void {

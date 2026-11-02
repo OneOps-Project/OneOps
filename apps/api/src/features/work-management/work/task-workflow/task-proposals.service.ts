@@ -1,13 +1,13 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { PrismaService } from '../database';
+import { PrismaService } from '../../../../modules/database';
 import {
   TASK_ERROR_CODES,
   TASK_EVENT_PROPOSAL_CREATED,
   TASK_EVENT_PROPOSAL_APPROVED,
   TASK_EVENT_PROPOSAL_REJECTED,
   TASK_EVENT_STATUS_CHANGED,
-} from './tasks.constants';
+} from './task-workflow.constants';
 import {
   Task,
   TaskProposal,
@@ -16,11 +16,11 @@ import {
   ProposalStatus,
   TaskProposalResponse,
   TaskProposalReviewResponse,
-} from './tasks.types';
+} from './task-workflow.types';
 import { CreateTaskProposalDto } from './dto/create-task-proposal.dto';
 import { RejectTaskProposalDto } from './dto/reject-task-proposal.dto';
 import { TaskProposalValidator } from './task-proposal.validator';
-import type { JwtPayload } from '../platform/types/identity.types';
+import type { JwtPayload } from '../../../../modules/platform/types/identity.types';
 
 @Injectable()
 export class TaskProposalsService {
