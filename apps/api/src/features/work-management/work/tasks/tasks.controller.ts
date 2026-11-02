@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
   Body,
   Param,
   Query,
@@ -12,11 +11,10 @@ import {
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
-import { JwtAuthGuard } from '../platform/guards/jwt-auth.guard';
-import { CurrentUser } from '../platform/decorators/current-user.decorator';
-import type { JwtPayload } from '../platform/types/identity.types';
-import type { Task, TaskStatus, TaskTransitionResponse } from './tasks.types';
+import { JwtAuthGuard } from '../../../../modules/platform/guards/jwt-auth.guard';
+import { CurrentUser } from '../../../../modules/platform/decorators/current-user.decorator';
+import type { JwtPayload } from '../../../../modules/platform/types/identity.types';
+import type { Task, TaskStatus } from './tasks.types';
 
 @Controller(['tasks', 'api/v1/tasks'])
 @UseGuards(JwtAuthGuard)
@@ -43,19 +41,5 @@ export class TasksController {
   @Get(':id')
   async findById(@Param('id') id: string): Promise<Task> {
     return this.tasksService.findById(id);
-  }
-
-  @Patch(':id/status')
-  @HttpCode(HttpStatus.OK)
-  async transitionStatus(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: UpdateTaskStatusDto,
-  ): Promise<TaskTransitionResponse> {
-    const result = await this.tasksService.transitionStatus(id, user, dto);
-    return {
-      statusCode: HttpStatus.OK,
-      data: result,
-    };
   }
 }
