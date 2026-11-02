@@ -1,59 +1,32 @@
 import {
   Controller,
-  Get,
   Post,
   Patch,
   Body,
   Param,
-  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { TasksService } from './tasks.service';
+import { TaskWorkflowService } from './task-workflow.service';
 import {
-  CreateTaskDto,
   UpdateTaskStatusDto,
   CreateTaskProposalDto,
   RejectTaskProposalDto,
 } from './dto';
-import { JwtAuthGuard } from '../platform/guards/jwt-auth.guard';
-import { CurrentUser } from '../platform/decorators/current-user.decorator';
-import type { JwtPayload } from '../platform/types/identity.types';
+import { JwtAuthGuard } from '../../../../modules/platform/guards/jwt-auth.guard';
+import { CurrentUser } from '../../../../modules/platform/decorators/current-user.decorator';
+import type { JwtPayload } from '../../../../modules/platform/types/identity.types';
 import type {
-  Task,
-  TaskStatus,
   TaskTransitionResponse,
   TaskProposalResponse,
   TaskProposalReviewResponse,
-} from './tasks.types';
+} from './task-workflow.types';
 
 @Controller(['tasks', 'api/v1/tasks'])
 @UseGuards(JwtAuthGuard)
-export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: CreateTaskDto,
-  ): Promise<Task> {
-    return this.tasksService.create(user.sub, dto);
-  }
-
-  @Get()
-  async findAll(
-    @Query('assigneeId') assigneeId?: string,
-    @Query('status') status?: TaskStatus,
-  ): Promise<Task[]> {
-    return this.tasksService.findAll({ assigneeId, status });
-  }
-
-  @Get(':id')
-  async findById(@Param('id') id: string): Promise<Task> {
-    return this.tasksService.findById(id);
-  }
+export class TaskWorkflowController {
+  constructor(private readonly taskWorkflowService: TaskWorkflowService) {}
 
   @Patch(':id/status')
   @HttpCode(HttpStatus.OK)
@@ -62,7 +35,7 @@ export class TasksController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateTaskStatusDto,
   ): Promise<TaskTransitionResponse> {
-    const result = await this.tasksService.transitionStatus(id, user, dto);
+    const result = await this.taskWorkflowService.transitionStatus(id, user, dto);
     return {
       statusCode: HttpStatus.OK,
       data: result,
@@ -76,7 +49,7 @@ export class TasksController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateTaskProposalDto,
   ): Promise<TaskProposalResponse> {
-    return this.tasksService.createProposal(id, user, dto);
+    return this.taskWorkflowService.createProposal(id, user, dto);
   }
 
   @Patch(':id/proposals/:proposalId/approve')
@@ -86,7 +59,7 @@ export class TasksController {
     @Param('proposalId') proposalId: string,
     @CurrentUser() user: JwtPayload,
   ): Promise<TaskProposalReviewResponse> {
-    return this.tasksService.approveProposal(id, proposalId, user);
+    return this.taskWorkflowService.approveProposal(id, proposalId, user);
   }
 
   @Patch(':id/proposals/:proposalId/reject')
@@ -97,7 +70,6 @@ export class TasksController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: RejectTaskProposalDto,
   ): Promise<TaskProposalReviewResponse> {
-    return this.tasksService.rejectProposal(id, proposalId, user, dto);
+    return this.taskWorkflowService.rejectProposal(id, proposalId, user, dto);
   }
 }
-

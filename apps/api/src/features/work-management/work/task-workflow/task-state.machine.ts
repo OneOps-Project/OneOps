@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { TaskStatus } from './tasks.types';
-import { TASK_ERROR_CODES } from './tasks.constants';
-import type { UserRole } from '../platform/types/identity.types';
+import { TaskStatus } from './task-workflow.types';
+import { TASK_ERROR_CODES } from './task-workflow.constants';
+import type { UserRole } from '../../../../modules/platform/types/identity.types';
 
 export class TaskStateMachine {
   static validate(
