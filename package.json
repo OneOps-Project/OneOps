@@ -11,6 +11,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "dev:mock": "node scripts/dev-mock.mjs",
     "dev:web": "npm run dev -w @oneops/web --",
     "dev:api": "npm run dev -w @oneops/api",
     "prepare:dev": "npm run structure:prepare && npm run tokens:build && npm run db:generate",

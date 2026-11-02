@@ -13,7 +13,19 @@ export async function cleanDatabase() {
     const { default: modules } = await import("../../../modules.json", {
       with: { type: "json" },
     });
-    const tables = modules.map((m) => `"${m.databaseSchema}"."records"`);
+    const tables = [
+      ...modules
+        .filter((m) => m.recordTable !== false)
+        .map((m) => `"${m.databaseSchema}"."${m.recordTable ?? "records"}"`),
+      '"hr_organization"."org_history"',
+      '"hr_organization"."team_access_groups"',
+      '"hr_organization"."team_memberships"',
+      '"hr_organization"."department_access_groups"',
+      '"hr_organization"."department_access_users"',
+      '"hr_organization"."department_administrators"',
+      '"hr_organization"."teams"',
+      '"hr_organization"."departments"',
+    ];
     await client.query(`TRUNCATE ${tables.join(", ")} CASCADE`);
   } finally {
     await client.end();

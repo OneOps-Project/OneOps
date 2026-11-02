@@ -1,0 +1,139 @@
+enum OrganizationStatus {
+  ACTIVE
+  INACTIVE
+
+  @@schema("hr_organization")
+}
+
+enum TeamMembershipRole {
+  MANAGER
+  MEMBER
+
+  @@schema("hr_organization")
+}
+
+enum OrgHistoryEntityType {
+  DEPARTMENT
+  TEAM
+
+  @@schema("hr_organization")
+}
+
+enum OrgHistoryAction {
+  CREATE
+  UPDATE
+  DEACTIVATE
+  TRANSFER
+
+  @@schema("hr_organization")
+}
+
+model Department {
+  id             String                    @id @default(uuid()) @db.Uuid
+  name           String                    @db.VarChar(100)
+  description    String?                   @db.VarChar(1000)
+  status         OrganizationStatus        @default(ACTIVE)
+  createdBy      String                    @db.Uuid
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  administrators DepartmentAdministrator[]
+  accessUsers    DepartmentAccessUser[]
+  accessGroups   DepartmentAccessGroup[]
+  teams          Team[]
+
+  @@index([status])
+  @@map("departments")
+  @@schema("hr_organization")
+}
+
+model Team {
+  id           String             @id @default(uuid()) @db.Uuid
+  name         String             @db.VarChar(100)
+  description  String?            @db.VarChar(1000)
+  status       OrganizationStatus @default(ACTIVE)
+  departmentId String             @db.Uuid
+  createdBy    String             @db.Uuid
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  department   Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  memberships  TeamMembership[]
+  accessGroups TeamAccessGroup[]
+
+  @@index([departmentId, name])
+  @@index([departmentId, status])
+  @@map("teams")
+  @@schema("hr_organization")
+}
+
+model DepartmentAdministrator {
+  departmentId String     @db.Uuid
+  userId       String     @db.Uuid
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@id([departmentId, userId])
+  @@index([userId])
+  @@map("department_administrators")
+  @@schema("hr_organization")
+}
+
+model DepartmentAccessUser {
+  departmentId String     @db.Uuid
+  userId       String     @db.Uuid
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@id([departmentId, userId])
+  @@index([userId])
+  @@map("department_access_users")
+  @@schema("hr_organization")
+}
+
+model DepartmentAccessGroup {
+  departmentId String     @db.Uuid
+  groupId      String     @db.Uuid
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@id([departmentId, groupId])
+  @@index([groupId])
+  @@map("department_access_groups")
+  @@schema("hr_organization")
+}
+
+model TeamMembership {
+  teamId String             @db.Uuid
+  userId String             @db.Uuid
+  role   TeamMembershipRole
+  team   Team               @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  @@id([teamId, userId])
+  @@index([teamId, role])
+  @@index([userId, role])
+  @@map("team_memberships")
+  @@schema("hr_organization")
+}
+
+model TeamAccessGroup {
+  teamId  String @db.Uuid
+  groupId String @db.Uuid
+  team    Team   @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  @@id([teamId, groupId])
+  @@index([groupId])
+  @@map("team_access_groups")
+  @@schema("hr_organization")
+}
+
+model OrgHistory {
+  id          String               @id @default(uuid()) @db.Uuid
+  entityType  OrgHistoryEntityType
+  entityId    String               @db.Uuid
+  action      OrgHistoryAction
+  oldValue    Json?
+  newValue    Json?
+  performedBy String               @db.Uuid
+  createdAt   DateTime             @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([performedBy, createdAt])
+  @@map("org_history")
+  @@schema("hr_organization")
+}

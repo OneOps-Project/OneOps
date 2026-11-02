@@ -6,6 +6,7 @@ if (!new URL(database).pathname.endsWith("_test"))
   throw new Error("Test database name must end in _test");
 process.env.DATABASE_URL = database;
 process.env.NODE_ENV = "test";
+// TODO: [INTEGRATION] - Replace test-only mock authentication with real Auth integration.
 const migration = spawnSync(
   process.execPath,
   [

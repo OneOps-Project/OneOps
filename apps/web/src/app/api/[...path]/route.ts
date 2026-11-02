@@ -15,10 +15,21 @@ async function proxy(
     process.env.API_ORIGIN || "http://127.0.0.1:4000",
   );
   target.search = request.nextUrl.search;
+  // TODO: [INTEGRATION] - Remove mock identity forwarding when real Auth credentials are integrated.
+  const headers = new Headers({ "Content-Type": "application/json" });
+  for (const name of [
+    "x-mock-user-id",
+    "x-mock-role",
+    "x-mock-is-super-admin",
+    "x-mock-permissions",
+  ]) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
   try {
     const upstream = await fetch(target, {
       method: request.method,
-      headers: { "Content-Type": "application/json" },
+      headers,
       ...(["GET", "HEAD"].includes(request.method)
         ? {}
         : { body: await request.text() }),

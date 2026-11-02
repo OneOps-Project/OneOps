@@ -70,5 +70,30 @@
     "model": "WorkReport",
     "databaseSchema": "work_reports",
     "schema": "apps/api/src/features/work-management/coordination/workspace-today/reports/prisma/reports.prisma"
+  },
+  {
+    "name": "departments-teams",
+    "feature": "hr-management/organization/departments-teams",
+    "route": "departments",
+    "webRoute": "/hr-management/organization/departments",
+    "model": "Department",
+    "models": [
+      "Department",
+      "Team",
+      "DepartmentAdministrator",
+      "DepartmentAccessUser",
+      "DepartmentAccessGroup",
+      "TeamMembership",
+      "TeamAccessGroup",
+      "OrgHistory"
+    ],
+    "repositoryFiles": [
+      "repositories/department.repository.ts",
+      "repositories/team.repository.ts",
+      "repositories/org-history.repository.ts"
+    ],
+    "recordTable": false,
+    "databaseSchema": "hr_organization",
+    "schema": "apps/api/src/features/hr-management/organization/departments-teams/prisma/organization.prisma"
   }
 ]
