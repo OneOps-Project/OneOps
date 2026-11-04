@@ -1,0 +1,112 @@
+.header {
+  margin-bottom: var(--space-5);
+}
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: var(--weight-bold);
+  color: var(--foreground);
+}
+.header p {
+  margin: var(--space-2) 0 0;
+  color: var(--foreground-muted);
+}
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.tab {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  color: var(--foreground-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.tab[aria-selected="true"] {
+  border-bottom-color: var(--action);
+  color: var(--foreground);
+  font-weight: var(--weight-semibold);
+}
+.list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.itemHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.itemHead span {
+  color: var(--foreground-muted);
+  font-size: 13px;
+}
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: var(--space-3) 0;
+  font-size: 13px;
+}
+.facts dt {
+  color: var(--foreground-muted);
+}
+.facts dd {
+  margin: 0;
+  color: var(--foreground);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+.reason,
+.note {
+  margin: 0 0 var(--space-3);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.note {
+  color: var(--foreground-muted);
+  font-size: 13px;
+}
+.rejectForm {
+  display: grid;
+  gap: var(--space-2);
+}
+.rejectForm label {
+  font-size: 13px;
+  font-weight: var(--weight-medium);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.empty {
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 48px 24px;
+  color: var(--foreground-muted);
+}
+.empty h2 {
+  color: var(--foreground);
+  font-size: 18px;
+}
+@media (max-width: 800px) {
+  .header h1 {
+    font-size: 20px;
+  }
+}
